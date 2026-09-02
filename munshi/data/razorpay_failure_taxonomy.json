@@ -1,0 +1,173 @@
+{
+  "_meta": {
+    "purpose": "Machine-usable recovery semantics for Razorpay payment failure reasons.",
+    "provenance": "Reason codes, descriptions and next_step guidance distilled from Razorpay's public error documentation (razorpay.com/docs -> Errors -> List of Errors, and the error-structure page defining code/description/field/source/step/reason).",
+    "source_semantics": {
+      "customer": "The customer made an error. Display a meaningful message and prompt them to retry.",
+      "business": "Your integration sent an invalid request. Fix the request parameters before retrying.",
+      "gateway": "The payment gateway or bank returned an error. Usually transient. Retry or switch method.",
+      "razorpay": "Internal error at Razorpay's end. Retry after a short delay."
+    },
+    "field_definitions": {
+      "retryability": {
+        "never": "A retry on ANY instrument cannot succeed until an out-of-band change happens. Spending a retry here is pure waste.",
+        "new_instrument_only": "The stored/attempted instrument is structurally unusable. Retrying the SAME instrument is guaranteed to fail; recovery requires the customer to supply a different one.",
+        "after_state_change": "A retry can succeed, but only once an external state changes (balance tops up, a daily limit window resets, an outage clears). Timing is the whole game.",
+        "immediate": "The customer was present and dropped out. Intent is still warm; a fast re-attempt has the highest yield of any class."
+      },
+      "blame": "Who must act for money to move. Drives whether we contact the CUSTOMER, page MERCHANT ops, or file an ENGINEERING ticket.",
+      "min_backoff_hours": "Deterministic floor on how soon a retry may be attempted. Enforced by the policy engine, not by the LLM.",
+      "resolution_requires": "The concrete precondition a retry needs. Used to explain to the merchant WHY we are or are not retrying."
+    }
+  },
+
+  "families": {
+    "instrument_dead": {
+      "label": "Instrument structurally unusable",
+      "retryability": "new_instrument_only",
+      "blame": "customer",
+      "default_intervention": "instrument_update_link",
+      "rationale": "The card/account/VPA cannot authorise any amount. A retry ladder on this instrument is a guaranteed-zero action; the only path to money is the customer attaching a new instrument."
+    },
+    "balance_dependent": {
+      "label": "Payer balance insufficient",
+      "retryability": "after_state_change",
+      "blame": "customer",
+      "default_intervention": "scheduled_retry",
+      "rationale": "Balance is time-varying. Retry value is dominated by WHEN, not whether. Salary-cycle and prior-success-hour signals matter more than attempt count."
+    },
+    "transient_infra": {
+      "label": "Transient issuer / gateway / PSP failure",
+      "retryability": "after_state_change",
+      "blame": "issuer",
+      "default_intervention": "downtime_aware_retry",
+      "rationale": "Success probability is a function of the outage window, which Razorpay publishes via the Payment Downtime API. Retrying into an active high-severity downtime burns a bounded retry for near-zero expected value."
+    },
+    "customer_dropout": {
+      "label": "Customer abandoned an in-flight authentication",
+      "retryability": "immediate",
+      "blame": "customer",
+      "default_intervention": "warm_recovery_link",
+      "rationale": "The payer was actively transacting seconds ago. This is the highest-intent, shortest-half-life recovery class in the whole taxonomy."
+    },
+    "limit_bound": {
+      "label": "Instrument or network limit exhausted",
+      "retryability": "after_state_change",
+      "blame": "customer",
+      "default_intervention": "rail_switch_or_window_retry",
+      "rationale": "The limit resets on a known cadence (usually 24h) or can be bypassed by switching rails. Retrying inside the same window cannot succeed."
+    },
+    "risk_flagged": {
+      "label": "Declined by a risk or compliance check",
+      "retryability": "never",
+      "blame": "risk",
+      "default_intervention": "human_review",
+      "rationale": "An automated system must never attempt to launder its way past a risk decline by retrying. This class is hard-stopped and escalated to a human."
+    },
+    "merchant_config": {
+      "label": "Merchant account or method not configured",
+      "retryability": "never",
+      "blame": "merchant",
+      "default_intervention": "merchant_ops_alert",
+      "rationale": "No amount of customer contact fixes this. Chasing the customer is an actively wrong action; the merchant must enable the method."
+    },
+    "integration_bug": {
+      "label": "Malformed request from the merchant integration",
+      "retryability": "never",
+      "blame": "engineering",
+      "default_intervention": "engineering_ticket",
+      "rationale": "This is a code defect surfacing as revenue loss. It belongs in a bug tracker, not a dunning queue."
+    },
+    "already_settled": {
+      "label": "Money already collected",
+      "retryability": "never",
+      "blame": "none",
+      "default_intervention": "suppress",
+      "rationale": "The single most damaging false positive in revenue recovery: chasing a customer who has already paid. Hard-suppressed before any contact is generated."
+    },
+    "mandate_broken": {
+      "label": "Recurring mandate not usable",
+      "retryability": "never",
+      "blame": "customer",
+      "default_intervention": "mandate_reauth_link",
+      "rationale": "The debit authority itself is gone. Under the RBI e-mandate framework a fresh AFA-authenticated registration is required; retrying the debit is not a legal path to the money."
+    }
+  },
+
+  "reasons": {
+    "card_expired":                        {"family": "instrument_dead", "sources": ["customer"], "description": "The card has expired.", "next_step": "The customer must retry with a valid card.", "min_backoff_hours": null, "resolution_requires": "customer supplies a non-expired card"},
+    "debit_instrument_blocked":            {"family": "instrument_dead", "sources": ["customer", "gateway"], "description": "The customer is using a blocked card. Blocked by the issuer or by the customer.", "next_step": "The customer must retry with a different card or method.", "min_backoff_hours": null, "resolution_requires": "issuer unblocks the card, or a different instrument is used"},
+    "debit_instrument_inactive":           {"family": "instrument_dead", "sources": ["gateway"], "description": "The debit instrument is inactive.", "next_step": "Customer needs to activate the instrument or use another payment method.", "min_backoff_hours": null, "resolution_requires": "instrument activated or replaced"},
+    "card_number_invalid":                 {"family": "instrument_dead", "sources": ["customer"], "description": "The card number is invalid.", "next_step": "Customer needs to enter a valid card number.", "min_backoff_hours": null, "resolution_requires": "corrected card number"},
+    "card_not_enrolled":                   {"family": "instrument_dead", "sources": ["customer"], "description": "The card is not enrolled for this payment method.", "next_step": "Customer needs to enroll the card or use another card.", "min_backoff_hours": null, "resolution_requires": "card enrolled with issuer, or a different card"},
+    "bank_account_invalid":                {"family": "instrument_dead", "sources": ["customer"], "description": "The bank account is not valid. The customer or bank could have closed the account.", "next_step": "The customer must try using a valid bank account or another method.", "min_backoff_hours": null, "resolution_requires": "a valid, open bank account"},
+    "invalid_vpa":                         {"family": "instrument_dead", "sources": ["customer", "gateway"], "description": "The customer has entered an incorrect VPA.", "next_step": "The customer must check and enter the correct VPA.", "min_backoff_hours": null, "resolution_requires": "a resolvable VPA"},
+    "transaction_on_vpa_restricted":       {"family": "instrument_dead", "sources": ["gateway"], "description": "Transaction on this VPA has been temporarily or permanently blocked by the PSP.", "next_step": "The customer must retry with another UPI ID.", "min_backoff_hours": null, "resolution_requires": "a different UPI ID"},
+    "user_not_registered_for_netbanking":  {"family": "instrument_dead", "sources": ["customer"], "description": "The customer's bank account is not registered for netbanking.", "next_step": "The customer should register their account with the issuing bank.", "min_backoff_hours": null, "resolution_requires": "netbanking registration or a different method"},
+    "vpa_resolution_failed":               {"family": "instrument_dead", "sources": ["gateway"], "description": "The UPI network failed to validate the VPA.", "next_step": "The customer must retry using a different bank account or method.", "min_backoff_hours": null, "resolution_requires": "a resolvable VPA"},
+
+    "insufficient_funds":                  {"family": "balance_dependent", "sources": ["customer"], "description": "The customer does not have sufficient funds in the account.", "next_step": "The customer must retry with a different card or method.", "min_backoff_hours": 24, "resolution_requires": "payer account balance >= amount"},
+    "credit_limit_exceeded":               {"family": "balance_dependent", "sources": ["gateway"], "description": "The customer's credit limit has been exceeded.", "next_step": "Customer needs to reduce the amount or use another payment method.", "min_backoff_hours": 48, "resolution_requires": "credit headroom restored, or a smaller amount"},
+    "amount_less_than_minimum_amount":     {"family": "integration_bug", "sources": ["business"], "description": "Amount in the payment request is less than the bank's minimum.", "next_step": "Ensure the payment amount exceeds the bank's minimum fee.", "min_backoff_hours": null, "resolution_requires": "corrected amount in the request"},
+
+    "bank_technical_error":                {"family": "transient_infra", "sources": ["gateway", "customer"], "description": "The issuing bank's Core Banking System hit a technical error while processing.", "next_step": "The customer must try using another bank account or another method.", "min_backoff_hours": 2, "resolution_requires": "issuer CBS recovers"},
+    "issuer_technical_error":              {"family": "transient_infra", "sources": ["gateway"], "description": "Technical error occurred at the card issuer.", "next_step": "Please retry after some time or use another card.", "min_backoff_hours": 2, "resolution_requires": "issuer platform recovers"},
+    "gateway_technical_error":             {"family": "transient_infra", "sources": ["gateway"], "description": "Technical error occurred at the gateway.", "next_step": "Please retry after some time.", "min_backoff_hours": 1, "resolution_requires": "gateway recovers"},
+    "bank_not_available":                  {"family": "transient_infra", "sources": ["gateway"], "description": "Bank is not available due to a downtime or a technical issue.", "next_step": "The customer must retry.", "min_backoff_hours": 2, "resolution_requires": "bank downtime resolves"},
+    "bank_cutoff_in_progress":             {"family": "transient_infra", "sources": ["gateway"], "description": "Bank CBS cutoff is in progress. This is a periodic event at the bank's end.", "next_step": "The customer must retry.", "min_backoff_hours": 3, "resolution_requires": "cutoff window ends"},
+    "server_error":                        {"family": "transient_infra", "sources": ["razorpay"], "description": "Technical error at Razorpay's server.", "next_step": "Please retry after some time or reach out to Razorpay.", "min_backoff_hours": 1, "resolution_requires": "Razorpay platform recovers"},
+    "payment_declined_due_to_high_traffic":{"family": "transient_infra", "sources": ["gateway"], "description": "Payment declined due to high traffic at the gateway.", "next_step": "Please retry after some time.", "min_backoff_hours": 1, "resolution_requires": "gateway congestion clears"},
+    "request_timed_out":                   {"family": "transient_infra", "sources": ["gateway"], "description": "The request has timed out.", "next_step": "Please retry the request.", "min_backoff_hours": 1, "resolution_requires": "gateway responsiveness restored"},
+    "invalid_response_from_gateway":       {"family": "transient_infra", "sources": ["gateway"], "description": "Invalid response received from the gateway.", "next_step": "Please retry the transaction.", "min_backoff_hours": 1, "resolution_requires": "gateway responds correctly"},
+    "psp_app_not_available":               {"family": "transient_infra", "sources": ["gateway"], "description": "PSP app is not available, possibly because of a downtime with the PSP.", "next_step": "The customer must retry with another PSP app.", "min_backoff_hours": 2, "resolution_requires": "PSP recovers, or customer switches PSP"},
+    "upi_app_technical_error":             {"family": "transient_infra", "sources": ["gateway"], "description": "Technical error occurred at the customer's PSP.", "next_step": "The customer must retry. If it persists, try another UPI app.", "min_backoff_hours": 2, "resolution_requires": "PSP recovers"},
+    "authorisation_declined_by_psp":       {"family": "transient_infra", "sources": ["gateway"], "description": "PSP app rejected the authorisation request; can indicate PSP downtime or a VPA issue.", "next_step": "Recheck the VPA and retry. If recurring, the customer can choose another PSP app.", "min_backoff_hours": 2, "resolution_requires": "PSP accepts the authorisation"},
+    "payment_failed":                      {"family": "transient_infra", "sources": ["gateway", "customer"], "description": "Payment processing failed at the bank or wallet gateway. No specific code received.", "next_step": "Please retry with a different payment method.", "min_backoff_hours": 4, "resolution_requires": "unknown - opaque gateway decline"},
+    "payment_declined":                    {"family": "transient_infra", "sources": ["gateway"], "description": "The payment has been declined.", "next_step": "Customer needs to retry with another payment method.", "min_backoff_hours": 4, "resolution_requires": "unknown - opaque decline"},
+    "card_declined":                       {"family": "transient_infra", "sources": ["gateway"], "description": "The card has been declined.", "next_step": "The customer must retry with a different card or method.", "min_backoff_hours": 6, "resolution_requires": "issuer approves, or a different card"},
+    "verification_failed":                 {"family": "transient_infra", "sources": ["gateway"], "description": "Verification of the payment using the status check API has failed.", "next_step": "This is a temporary error. The customer must retry.", "min_backoff_hours": 1, "resolution_requires": "status verification succeeds"},
+
+    "payment_cancelled":                   {"family": "customer_dropout", "sources": ["customer", "gateway"], "description": "The customer explicitly cancelled the payment during authentication.", "next_step": "The customer must retry to complete the payment.", "min_backoff_hours": 0, "resolution_requires": "customer completes authentication"},
+    "incorrect_otp":                       {"family": "customer_dropout", "sources": ["customer"], "description": "The customer entered an incorrect OTP.", "next_step": "The customer must retry and enter the correct OTP.", "min_backoff_hours": 0, "resolution_requires": "correct OTP entered"},
+    "otp_expired":                         {"family": "customer_dropout", "sources": ["customer"], "description": "The OTP has expired.", "next_step": "Customer needs to request a new OTP.", "min_backoff_hours": 0, "resolution_requires": "fresh OTP requested and entered"},
+    "authentication_failed":               {"family": "customer_dropout", "sources": ["customer", "gateway"], "description": "3D Secure or OTP authentication failed, possibly a cancel on the OTP screen.", "next_step": "The customer must enter correct authentication details.", "min_backoff_hours": 0, "resolution_requires": "successful AFA"},
+    "payment_timed_out":                   {"family": "customer_dropout", "sources": ["customer", "gateway"], "description": "The customer did not complete the transaction within the specified time.", "next_step": "The customer must retry and complete within the time.", "min_backoff_hours": 0, "resolution_requires": "customer completes within the window"},
+    "payment_session_expired":             {"family": "customer_dropout", "sources": ["gateway"], "description": "The payment session has expired.", "next_step": "Customer needs to start a new payment session.", "min_backoff_hours": 0, "resolution_requires": "a fresh payment session"},
+    "incorrect_cvv":                       {"family": "customer_dropout", "sources": ["customer"], "description": "The customer entered an incorrect CVV.", "next_step": "The customer must retry and enter the correct CVV.", "min_backoff_hours": 0, "resolution_requires": "correct CVV"},
+    "payment_collect_request_expired":     {"family": "customer_dropout", "sources": ["gateway"], "description": "The payment collect request has expired.", "next_step": "Customer needs to retry the payment.", "min_backoff_hours": 0, "resolution_requires": "a fresh collect request the customer approves"},
+    "otp_attempts_exceeded":               {"family": "limit_bound", "sources": ["customer"], "description": "OTP attempts have been exceeded.", "next_step": "Customer needs to wait and retry after some time.", "min_backoff_hours": 6, "resolution_requires": "issuer OTP attempt counter resets"},
+
+    "transaction_daily_limit_exceeded":    {"family": "limit_bound", "sources": ["customer", "gateway"], "description": "The customer exceeded the daily transaction limit set on the card.", "next_step": "Retry using a different instrument or wait 24 hours.", "min_backoff_hours": 24, "resolution_requires": "daily limit window resets, or a different instrument"},
+    "transaction_limit_exceeded":          {"family": "limit_bound", "sources": ["customer"], "description": "The customer exceeded the credit or debit limit set on their card.", "next_step": "Retry using a different bank's card or method.", "min_backoff_hours": 24, "resolution_requires": "limit raised, or a different instrument"},
+    "transaction_frequency_limit_exceeded":{"family": "limit_bound", "sources": ["customer", "gateway"], "description": "NPCI per-day frequency limit exhausted for this payer.", "next_step": "Please retry using another payment method.", "min_backoff_hours": 24, "resolution_requires": "NPCI daily counter resets, or a non-UPI rail"},
+    "transaction_daily_count_exceeded":    {"family": "limit_bound", "sources": ["gateway"], "description": "The daily transaction count has been exceeded.", "next_step": "Customer needs to wait for the next day or use another payment method.", "min_backoff_hours": 24, "resolution_requires": "daily counter resets"},
+    "mcc_amount_limit_exceeded":           {"family": "limit_bound", "sources": ["gateway"], "description": "The amount limit for this Merchant Category Code has been exceeded.", "next_step": "Please reduce the amount or contact Razorpay.", "min_backoff_hours": 24, "resolution_requires": "smaller amount or MCC limit change"},
+
+    "payment_risk_check_failed":           {"family": "risk_flagged", "sources": ["razorpay", "gateway", "customer"], "description": "Payment declined due to risk checks performed by Razorpay, the gateway or the issuer.", "next_step": "The customer must retry with a different card or method.", "min_backoff_hours": null, "resolution_requires": "human risk review"},
+    "compliance_violation":                {"family": "risk_flagged", "sources": ["business"], "description": "The payment violates compliance requirements.", "next_step": "Please ensure the payment meets all compliance requirements.", "min_backoff_hours": null, "resolution_requires": "compliance sign-off"},
+    "payment_amount_tampered":             {"family": "risk_flagged", "sources": ["gateway"], "description": "The payment amount has been tampered.", "next_step": "The customer must retry with the correct amount.", "min_backoff_hours": null, "resolution_requires": "integrity investigation"},
+    "international_transaction_not_allowed":{"family": "risk_flagged", "sources": ["customer"], "description": "International transactions are not allowed.", "next_step": "Use a domestic payment method or enable international transactions.", "min_backoff_hours": null, "resolution_requires": "issuer enables international, or a domestic instrument"},
+
+    "payment_method_not_enabled":          {"family": "merchant_config", "sources": ["business"], "description": "The selected payment method is not enabled for your business.", "next_step": "Reach out to Razorpay to enable the payment method.", "min_backoff_hours": null, "resolution_requires": "merchant enables the method"},
+    "bank_not_enabled":                    {"family": "merchant_config", "sources": ["business"], "description": "The selected bank is not enabled for your business.", "next_step": "Please reach out to Razorpay to enable the selected bank.", "min_backoff_hours": null, "resolution_requires": "merchant enables the bank"},
+    "card_network_not_enabled":            {"family": "merchant_config", "sources": ["business"], "description": "The card's network is not enabled for the merchant.", "next_step": "Please reach out to Razorpay to enable the card network.", "min_backoff_hours": null, "resolution_requires": "merchant enables the network"},
+    "recurring_payment_not_enabled":       {"family": "merchant_config", "sources": ["business"], "description": "Recurring payments are not enabled.", "next_step": "Please enable recurring payments for your account.", "min_backoff_hours": null, "resolution_requires": "merchant enables recurring"},
+    "upi_collect_not_enabled":             {"family": "merchant_config", "sources": ["business"], "description": "UPI Collect flow is not enabled but a collect request was made.", "next_step": "Please enable collect flow.", "min_backoff_hours": null, "resolution_requires": "merchant enables UPI collect"},
+    "merchant_not_activated":              {"family": "merchant_config", "sources": ["business"], "description": "The merchant account is not activated.", "next_step": "Please contact Razorpay to activate the merchant account.", "min_backoff_hours": null, "resolution_requires": "account activation"},
+
+    "invalid_order_id":                    {"family": "integration_bug", "sources": ["business"], "description": "Order ID in the payment request is missing or invalid.", "next_step": "Make sure the correct order ID is passed when initiating a payment.", "min_backoff_hours": null, "resolution_requires": "integration fix"},
+    "order_amount_mismatch":               {"family": "integration_bug", "sources": ["business"], "description": "The order amount differs from the payment amount.", "next_step": "Pass the same amount in both payment and order requests.", "min_backoff_hours": null, "resolution_requires": "integration fix"},
+    "order_payment_method_mismatch":       {"family": "integration_bug", "sources": ["business"], "description": "The method in the order request differs from the payment request.", "next_step": "Do not pass method in the create order request.", "min_backoff_hours": null, "resolution_requires": "integration fix"},
+    "input_validation_failed":             {"family": "integration_bug", "sources": ["business"], "description": "Payment failed due to a wrong request or input.", "next_step": "Rectify the validation issues and try again.", "min_backoff_hours": null, "resolution_requires": "integration fix"},
+    "duplicate_request":                   {"family": "integration_bug", "sources": ["business"], "description": "A duplicate request has been submitted.", "next_step": "Please avoid duplicate requests.", "min_backoff_hours": null, "resolution_requires": "idempotency fix in the caller"},
+
+    "order_already_paid":                  {"family": "already_settled", "sources": ["business"], "description": "There can only be one successful payment per order ID; a payment is already completed for this order.", "next_step": "Check order status before initiating a new payment attempt.", "min_backoff_hours": null, "resolution_requires": "nothing - the money is already collected"},
+
+    "mandate_creation_failed":             {"family": "mandate_broken", "sources": ["gateway"], "description": "Mandate creation has failed.", "next_step": "Customer needs to retry mandate creation or use another payment method.", "min_backoff_hours": null, "resolution_requires": "fresh AFA-authenticated mandate registration"},
+    "mandate_creation_declined":           {"family": "mandate_broken", "sources": ["gateway"], "description": "Mandate creation has been declined.", "next_step": "Customer needs to retry mandate creation or use another payment method.", "min_backoff_hours": null, "resolution_requires": "fresh AFA-authenticated mandate registration"},
+    "mandate_creation_expired":            {"family": "mandate_broken", "sources": ["gateway"], "description": "Mandate creation has expired.", "next_step": "Customer needs to retry mandate creation.", "min_backoff_hours": null, "resolution_requires": "fresh mandate registration"},
+    "reqauth_mandate_not_acknowledged":    {"family": "mandate_broken", "sources": ["gateway"], "description": "Request authentication mandate is not acknowledged.", "next_step": "Customer needs to acknowledge the mandate.", "min_backoff_hours": null, "resolution_requires": "customer acknowledges the mandate"},
+    "funds_blocked_by_mandate":            {"family": "mandate_broken", "sources": ["gateway"], "description": "Funds are blocked by an existing mandate.", "next_step": "Customer needs to release the mandate or use another account.", "min_backoff_hours": 24, "resolution_requires": "existing mandate hold released"},
+    "upi_autopay_not_supported_on_psp":    {"family": "mandate_broken", "sources": ["customer"], "description": "UPI Autopay is not supported on this PSP.", "next_step": "Please retry with another PSP app.", "min_backoff_hours": null, "resolution_requires": "mandate re-registered on a supporting PSP"}
+  }
+}
