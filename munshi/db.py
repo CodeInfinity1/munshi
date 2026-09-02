@@ -16,9 +16,20 @@ _SCHEMA = Path(__file__).parent / "schema.sql"
 
 def connect(path: str | Path | None = None) -> sqlite3.Connection:
     p = Path(path) if path else settings().db_path
-    conn = sqlite3.connect(p, isolation_level=None)  # autocommit; we manage txns explicitly
+    conn = sqlite3.connect(
+        p,
+        isolation_level=None,   # autocommit; transactions are managed explicitly below
+        # A connection is created per request and used by exactly one request, but
+        # FastAPI hands a request between its threadpool and the event loop, so the
+        # same connection legitimately crosses threads within one sequential request.
+        check_same_thread=False,
+    )
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    # A background batch writes while the dashboard reads. WAL (set in schema.sql)
+    # allows that; the timeout covers the brief write-lock overlap instead of
+    # surfacing "database is locked" to the UI.
+    conn.execute("PRAGMA busy_timeout = 5000")
     return conn
 
 
