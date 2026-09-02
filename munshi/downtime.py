@@ -87,3 +87,27 @@ def status_for(conn: sqlite3.Connection, case: dict, now: int) -> dict:
 def blocks_retry(status: dict) -> bool:
     """Active high/medium severity downtime makes a retry near-worthless."""
     return status.get("state") == "active" and status.get("severity") in ("high", "medium")
+
+
+#: Longest an outage may hold a case before we stop waiting. An issuer that has
+#: been down for this long is no longer a "wait it out" problem: the useful move
+#: is to put a link in front of the customer so they can pay by another rail.
+MAX_CONSECUTIVE_HOLDS = 3
+
+
+def publish_resolutions(conn: sqlite3.Connection, now: int) -> int:
+    """Stand in for the payment.downtime.resolved webhook.
+
+    In production Razorpay pushes payment.downtime.started / .updated / .resolved
+    and this table is updated from the webhook. In a batch run the same
+    transition is driven off `resolves_at`, which is simulator ground truth the
+    agent never reads -- so, exactly as in production, an unscheduled outage has
+    no known end until the moment resolution is published.
+    """
+    cur = conn.execute(
+        "UPDATE downtimes SET status='resolved', end_at=resolves_at"
+        " WHERE status IN ('started','updated') AND resolves_at IS NOT NULL"
+        " AND resolves_at <= ?",
+        (now,),
+    )
+    return cur.rowcount or 0

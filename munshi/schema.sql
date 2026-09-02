@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS cases (
     mrr_paise           INTEGER NOT NULL DEFAULT 0,   -- subscriptions: recurring value at risk
     next_action_at      INTEGER,               -- scheduled wake-up
     promise_to_pay_at   INTEGER,               -- customer committed to pay by this date
+    deferred_key        TEXT,                  -- attempt-state a deliberate deferral was issued for
+    downtime_holds      INTEGER NOT NULL DEFAULT 0,  -- times we waited on an outage
     stop_reason         TEXT,
     recovered_paise     INTEGER NOT NULL DEFAULT 0,
     latent              TEXT,                  -- json: simulator ground truth. NEVER read by the agent.
@@ -104,7 +106,10 @@ CREATE TABLE IF NOT EXISTS downtimes (
     end_at      INTEGER,
     status      TEXT NOT NULL,                 -- scheduled | started | updated | resolved
     severity    TEXT NOT NULL,                 -- high | medium | low
-    scheduled   INTEGER NOT NULL DEFAULT 0
+    scheduled   INTEGER NOT NULL DEFAULT 0,
+    -- Simulator ground truth: when Razorpay publishes payment.downtime.resolved.
+    -- Never read by the agent; an unscheduled outage has no known end until then.
+    resolves_at INTEGER
 );
 
 -- Append-only, hash-chained. Each row commits to the one before it, so any

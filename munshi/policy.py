@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from . import db
+from . import db, downtime
 from .compliance import (
     contact_window_ok,
     mandate_debit_ok,
@@ -109,12 +109,14 @@ class PolicyEngine:
 
         # --- money already collected -----------------------------------------
         already_paid = sem.family == "already_settled"
-        add("not_already_settled", not already_paid,
-            "no successful payment recorded for this entity" if not already_paid
-            else "Razorpay reports order_already_paid: this money is already collected, "
-                 "chasing it would contact a customer who has paid", "deny")
         if already_paid and action != "suppress_case":
+            add("not_already_settled", False,
+                "Razorpay reports order_already_paid: this money is already collected, and "
+                "chasing it would contact a customer who has already paid", "deny")
             return self._finish(rules, stop_reason="already_settled")
+        add("not_already_settled", True,
+            "suppressing an already-settled case is the correct action" if already_paid
+            else "no successful payment recorded for this entity")
 
         # --- risk holds -------------------------------------------------------
         if sem.family == "risk_flagged":
@@ -154,13 +156,20 @@ class PolicyEngine:
                 add("retry_cooldown", True, "no prior recovery attempt on this case")
 
             dt = ctx["downtime"]
-            blocked = dt.get("state") == "active" and dt.get("severity") in ("high", "medium")
+            holds = dt.get("consecutive_holds", 0)
+            blocked = (
+                dt.get("state") == "active"
+                and dt.get("severity") in ("high", "medium")
+                # Waiting is only rational while waiting is bounded. Past this, the
+                # outage is no longer a reason to hold the case hostage.
+                and holds < downtime.MAX_CONSECUTIVE_HOLDS
+            )
             add("downtime_clear", not blocked,
                 dt.get("note", "Razorpay reports no downtime for this instrument")
                 if not blocked else
                 f"Razorpay reports an active {dt['severity']}-severity downtime on this "
-                f"instrument; a retry now would spend one of {cap} attempts for near-zero "
-                "expected value")
+                f"instrument (hold {holds + 1}/{downtime.MAX_CONSECUTIVE_HOLDS}); a retry "
+                f"now would spend one of {cap} attempts for near-zero expected value")
             if blocked:
                 return self._finish(rules,
                                     reschedule_at=int(now + dt.get("hold_hours", 2) * 3600))
@@ -179,8 +188,12 @@ class PolicyEngine:
                 # Above the AFA ceiling only the customer can re-authenticate; below
                 # it we simply have not sent the notification yet, so send it.
                 if amount > self.p["max_autonomous_action_paise"]:
+                    # Only the customer can complete fresh AFA. Not a dead case -- a
+                    # case whose next action is a re-authorisation link.
                     return self._finish(rules, stop_reason="emandate_requires_customer_afa")
-                return self._finish(rules, stop_reason="pre_debit_notification_required")
+                # The notice simply has not been sent yet. Come back once it could
+                # have been, and let the reasoner propose sending it.
+                return self._finish(rules, reschedule_at=int(now + 3600))
 
         # --- customer contact -------------------------------------------------
         if is_contact:
@@ -295,9 +308,10 @@ class PolicyEngine:
                 break
             if r.escalate_to == "require_approval":
                 decision = "require_approval"
-            elif decision == "allow":
-                # A failing rule with no explicit escalation is a temporary refusal.
-                decision = "deny"
+            # A failing rule with no declared escalation is informational: it is
+            # recorded in the audit trail but cannot by itself deny. Temporary
+            # refusals come only from an explicit reschedule_at, so a rule can
+            # never accidentally terminate a live case.
         if stop_reason or reschedule_at:
             decision = "deny"
         return PolicyDecision(decision=decision, rules=rules, stop_reason=stop_reason,

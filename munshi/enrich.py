@@ -15,7 +15,7 @@ from __future__ import annotations
 import sqlite3
 
 from . import db, downtime
-from .compliance import contact_window_ok, npci_debit_window_ok
+from .compliance import AFA_FREE_LIMIT_PAISE, contact_window_ok, npci_debit_window_ok
 from .config import settings
 from .db import jload
 from .quantify import quantify
@@ -36,6 +36,10 @@ def build_context(conn: sqlite3.Connection, case: sqlite3.Row | dict, now: int) 
         (case["id"],),
     )
     contact_ok, contact_note = contact_window_ok(now, tz)
+    pre_debit_at = next(
+        (r["executed_at"] for r in prior
+         if r["action_type"] == "send_reminder" and r["executed_at"]), None
+    )
     debit_ok, debit_note = npci_debit_window_ok(now, tz)
     dt_status = downtime.status_for(conn, case, now)
 
@@ -70,7 +74,7 @@ def build_context(conn: sqlite3.Connection, case: sqlite3.Row | dict, now: int) 
             "min_backoff_hours": sem.min_backoff_hours,
             "taxonomy_default_intervention": sem.default_intervention,
         },
-        "downtime": dt_status,
+        "downtime": {**dt_status, "consecutive_holds": case["downtime_holds"]},
         "customer": {
             "id": cust.get("id"),
             "segment": cust.get("segment"),
@@ -99,6 +103,13 @@ def build_context(conn: sqlite3.Connection, case: sqlite3.Row | dict, now: int) 
             "contact_note": contact_note,
             "npci_debit_window_open": debit_ok,
             "npci_note": debit_note,
+            "pre_debit_notification_sent": pre_debit_at is not None,
+            "pre_debit_notice_hours": (
+                round((now - pre_debit_at) / 3600, 1) if pre_debit_at else None
+            ),
+            "mandate_amount_needs_customer_afa": (
+                case["method"] == "emandate" and case["amount_paise"] > AFA_FREE_LIMIT_PAISE
+            ),
             "timezone": tz,
         },
         "money": quantify(case),

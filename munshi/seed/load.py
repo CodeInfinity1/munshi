@@ -24,9 +24,10 @@ def load(conn: sqlite3.Connection, n: int = 320, seed: int = 20260824) -> dict:
         )
         conn.executemany(
             "INSERT INTO downtimes (id,method,instrument,begin_at,end_at,status,severity,"
-            "scheduled) VALUES (?,?,?,?,?,?,?,?)",
+            "scheduled,resolves_at) VALUES (?,?,?,?,?,?,?,?,?)",
             [(d["id"], d["method"], jdump(d["instrument"]), d["begin_at"], d["end_at"],
-              d["status"], d["severity"], d["scheduled"]) for d in batch["downtimes"]],
+              d["status"], d["severity"], d["scheduled"], d.get("resolves_at"))
+             for d in batch["downtimes"]],
         )
         for c in batch["cases"]:
             conn.execute(

@@ -138,16 +138,20 @@ def _downtimes(rng: random.Random) -> list[dict]:
     return [
         {"id": "down_SIM_hdfc_nb", "method": "netbanking", "instrument": {"bank": "HDFC"},
          "begin_at": BATCH_START - 5 * DAY, "end_at": BATCH_START - 5 * DAY + 7 * HOUR,
-         "status": "resolved", "severity": "high", "scheduled": 0},
+         "status": "resolved", "severity": "high", "scheduled": 0, "resolves_at": None},
+        # Unscheduled outages: no published end. The merchant only learns they are
+        # over when payment.downtime.resolved fires, which is what resolves_at models.
         {"id": "down_SIM_ybl_upi", "method": "upi", "instrument": {"vpa_handle": "ybl"},
          "begin_at": BATCH_START - 2 * HOUR, "end_at": None,
-         "status": "started", "severity": "high", "scheduled": 0},
+         "status": "started", "severity": "high", "scheduled": 0,
+         "resolves_at": BATCH_START + 9 * HOUR},
         {"id": "down_SIM_sbin_card", "method": "card", "instrument": {"issuer": "SBIN", "card_type": "credit"},
          "begin_at": BATCH_START - 30 * 60, "end_at": None,
-         "status": "started", "severity": "medium", "scheduled": 0},
+         "status": "started", "severity": "medium", "scheduled": 0,
+         "resolves_at": BATCH_START + 5 * HOUR},
         {"id": "down_SIM_icic_nb", "method": "netbanking", "instrument": {"bank": "ICIC"},
          "begin_at": BATCH_START + 2 * DAY, "end_at": BATCH_START + 2 * DAY + 4 * HOUR,
-         "status": "scheduled", "severity": "high", "scheduled": 1},
+         "status": "scheduled", "severity": "high", "scheduled": 1, "resolves_at": None},
     ]
 
 

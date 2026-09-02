@@ -142,7 +142,7 @@ class HeuristicReasoner:
         elif kind == "checkout_abandoned":
             cause = "customer_abandoned"
 
-        action, delay, msg = self._select(kind, family, sem, case, cust, dt)
+        action, delay, msg = self._select(kind, family, sem, case, cust, dt, ctx["compliance"])
         channel = cust.get("preferred_channel") or "email" if msg else "none"
         recoverability = self._recoverability(family, kind, case, cust)
 
@@ -158,8 +158,26 @@ class HeuristicReasoner:
         )
         return diag, plan
 
-    def _select(self, kind, family, sem, case, cust, dt):
+    def _select(self, kind, family, sem, case, cust, dt, comp):
         amount = case["amount_inr"]
+        # Recurring debits have two preconditions before a retry is even legal, and
+        # each has its own unblocking action. Writing the case off instead of taking
+        # that action throws away recoverable revenue.
+        if case["method"] == "emandate" and family not in (
+            "already_settled", "risk_flagged", "merchant_config", "integration_bug"
+        ):
+            if comp.get("mandate_amount_needs_customer_afa"):
+                return "send_mandate_reauth_link", 0.0, (
+                    f"The auto-pay debit of Rs {amount:,.0f} needs your re-authorisation, "
+                    "as it is above the limit for automatic recurring payments. "
+                    "Please approve it using the link."
+                )
+            if not comp.get("pre_debit_notification_sent"):
+                return "send_reminder", 0.0, (
+                    f"Advance notice: we will attempt the auto-pay debit of "
+                    f"Rs {amount:,.0f} after 24 hours. Please keep sufficient balance, "
+                    "or use the link to pay now."
+                )
         if kind == "invoice_overdue":
             if case["days_overdue"] > 60 and amount >= 25_000:
                 return "escalate_to_collections", 0.0, None
@@ -196,6 +214,16 @@ class HeuristicReasoner:
             )
         if family == "transient_infra":
             if dt.get("state") == "active":
+                from .downtime import MAX_CONSECUTIVE_HOLDS
+
+                if dt.get("consecutive_holds", 0) >= MAX_CONSECUTIVE_HOLDS:
+                    # The outage has outlasted our patience. Stop waiting on the
+                    # broken rail and let the customer pay on a working one.
+                    return "send_recovery_link", 0.0, (
+                        f"Your payment of Rs {amount:,.0f} could not be completed because "
+                        "your bank is currently facing an outage. You can pay using a "
+                        "different method here."
+                    )
                 return "schedule_retry", float(dt.get("hold_hours", 2.0)), None
             return "retry_payment", float(sem.min_backoff_hours or 2), None
         # balance_dependent and limit_bound: wait for the precondition, then retry.
