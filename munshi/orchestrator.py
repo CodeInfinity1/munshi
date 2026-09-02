@@ -93,16 +93,16 @@ class Orchestrator:
         steps = int(days * 24 / step_hours)
         for _ in range(steps):
             processed = self.tick(limit=limit)
-            if processed == 0 and not self._anything_pending():
+            if processed == 0 and not self.anything_pending():
                 break
             if isinstance(self.clock, VirtualClock):
                 self.clock.advance(step_hours * 3600)
             else:
                 break  # a real-time run does one pass; a scheduler drives the rest
-        self._sweep()
+        self.sweep()
         return self.finish()
 
-    def _sweep(self) -> None:
+    def sweep(self) -> None:
         """Terminalise anything still open when the window closes.
 
         A case left `scheduled` forever is a case nobody is accountable for. At the
@@ -117,7 +117,7 @@ class Orchestrator:
                 continue  # deliberately parked: a human still owes a decision
             self._stop(case, now, "recovery_window_expired")
 
-    def _anything_pending(self) -> bool:
+    def anything_pending(self) -> bool:
         return bool(db.scalar(
             self.conn,
             "SELECT COUNT(*) FROM cases WHERE state NOT IN (?,?,?,?)",

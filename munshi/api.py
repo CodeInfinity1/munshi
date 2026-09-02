@@ -282,12 +282,12 @@ def run(days: int = Body(14, embed=True), step_hours: int = Body(2, embed=True),
             for _ in range(steps):
                 processed = orch.tick()
                 _run_state["stats"] = dict(orch.stats)
-                if processed == 0 and not orch._anything_pending():
+                if processed == 0 and not orch.anything_pending():
                     break
                 orch.clock.advance(step_hours * 3600)
                 if tick_delay_ms:
                     time.sleep(tick_delay_ms / 1000)
-            orch._sweep()
+            orch.sweep()
             _run_state["stats"] = orch.finish()
             _run_state["status"] = "done"
         except Exception as exc:  # noqa: BLE001 - surfaced to the UI, never swallowed
@@ -310,7 +310,11 @@ def decide(action_id: str, decision: str, c=Depends(conn)):
         raise HTTPException(409, f"already {row['decision']}")
 
     orch = Orchestrator(c, build_reasoner(), build_adapter(), VirtualClock(_reference_now(c)))
-    orch.run_id = row["case_id"]
+    # Attribute the decision to the run that proposed the action, so the audit
+    # trail keeps one coherent run id rather than inventing a new one per click.
+    action = db.one(c, "SELECT run_id FROM actions WHERE id = ?", (action_id,))
+    if action and action["run_id"]:
+        orch.run_id = action["run_id"]
     now = _reference_now(c)
     if decision == "approve":
         orch.approve(action_id, now, decided_by="merchant")
