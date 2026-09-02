@@ -180,7 +180,9 @@ def _case_row(r) -> dict:
 
 @app.get("/api/cases/{case_id}")
 def case_detail(case_id: str, c=Depends(conn)):
-    row = db.one(c, "SELECT * FROM cases WHERE id = ?", (case_id,))
+    row = db.one(c, "SELECT c.*, cu.name AS customer_name, cu.segment, cu.contact_opt_out"
+                    " FROM cases c JOIN customers cu ON cu.id = c.customer_id"
+                    " WHERE c.id = ?", (case_id,))
     if row is None:
         raise HTTPException(404, "case not found")
     now = _reference_now(c)

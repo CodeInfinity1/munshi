@@ -1,5 +1,5 @@
 {
-  "generated_at": 1788355483,
+  "generated_at": 1788356604,
   "config": {
     "arms": "baseline,agent-heuristic,agent-heuristic-approved",
     "n": 320,
@@ -106,15 +106,15 @@
         "arm": "baseline",
         "reasoner": "fixed_ladder",
         "adapter": "simulator",
-        "run_id": "run_d43f0d1c84",
-        "wall_seconds": 4.32,
+        "run_id": "run_05906b2c0d",
+        "wall_seconds": 3.65,
         "ticks": 168,
         "deferred": 56,
         "degraded_to_heuristic": 0,
         "audit": {
           "valid": true,
           "checked": 15962,
-          "head": "4beb3102f746a2fcc59d8aa3aab3caa330bea0684eaeb6b240b844a43a902cee"
+          "head": "0b11ddfa1a9db209ed7750e32453ab2478cdb39c48f0ba4f5714c68496dd5ef4"
         },
         "db": "/tmp/munshi_eval_baseline.db"
       },
@@ -134,42 +134,42 @@
       "money": {
         "at_risk_paise": 1832035200,
         "latently_recoverable_paise": 1523371000,
-        "recovered_paise": 210920800,
-        "recovery_rate_of_at_risk": 11.51,
-        "recovery_rate_of_recoverable": 13.85,
-        "held_for_approval_paise": 890929400,
+        "recovered_paise": 307284700,
+        "recovery_rate_of_at_risk": 16.77,
+        "recovery_rate_of_recoverable": 20.17,
+        "held_for_approval_paise": 780267800,
         "escalated_paise": 47413900,
-        "unrecovered_paise": 1621114400,
+        "unrecovered_paise": 1524750500,
         "annualised_mrr_at_risk_paise": 8002873200,
-        "annualised_mrr_protected_paise": 1602618000
+        "annualised_mrr_protected_paise": 2155696800
       },
       "cases": {
         "total": 320,
-        "recovered": 109,
+        "recovered": 121,
         "by_state": {
-          "recovered": 109,
-          "stopped": 163,
-          "awaiting_approval": 32,
+          "recovered": 121,
+          "stopped": 165,
+          "awaiting_approval": 18,
           "suppressed": 5,
           "escalated": 11
         },
         "money_by_state": {
-          "recovered": 210920800,
-          "stopped": 674404800,
-          "awaiting_approval": 890929400,
+          "recovered": 307284700,
+          "stopped": 688702500,
+          "awaiting_approval": 780267800,
           "suppressed": 8366300,
           "escalated": 47413900
         },
         "all_terminal": true
       },
       "actions": {
-        "proposed": 4432,
-        "executed": 827,
-        "allowed": 827,
+        "proposed": 4441,
+        "executed": 850,
+        "allowed": 850,
         "blocked_by_policy": 3573,
-        "required_approval": 32,
+        "required_approval": 18,
         "not_executed": 0,
-        "retries": 217,
+        "retries": 238,
         "contacts": 526,
         "by_type": {
           "send_mandate_reauth_link": 78,
@@ -177,10 +177,10 @@
           "send_recovery_link": 240,
           "escalate_to_merchant_ops": 15,
           "send_instrument_update_link": 82,
+          "retry_payment": 238,
           "suppress_case": 5,
-          "retry_payment": 217,
           "open_engineering_ticket": 1,
-          "no_action": 63
+          "no_action": 65
         }
       },
       "quality": {
@@ -192,8 +192,8 @@
         "intervention_scored": 320,
         "diagnosis_accuracy": 89.38,
         "diagnosis_scored": 320,
-        "actions_per_case": 2.58,
-        "contacts_per_recovered_case": 4.83
+        "actions_per_case": 2.66,
+        "contacts_per_recovered_case": 4.35
       },
       "compliance": {
         "rbi_contact_window_violations": 0,
@@ -203,8 +203,8 @@
       },
       "stopping": {
         "by_reason": {
-          "recovered": 109,
-          "all_recovery_avenues_exhausted": 73,
+          "recovered": 121,
+          "all_recovery_avenues_exhausted": 75,
           "recovery_window_expired": 87,
           "customer_opted_out": 3,
           "suppress_case_completed": 5,
@@ -216,12 +216,12 @@
         "cases_over_contact_cap": 0
       },
       "approvals": {
-        "requested": 32,
-        "pending": 32,
-        "value_paise": 890929400,
+        "requested": 18,
+        "pending": 18,
+        "value_paise": 780267800,
         "items": [
           {
-            "action_id": "act_b362d7ec8c70",
+            "action_id": "act_d272fa1ebe1f",
             "case_id": "case_0064",
             "action": "retry_payment",
             "amount_paise": 120285700,
@@ -229,7 +229,7 @@
             "decision": null
           },
           {
-            "action_id": "act_d3c0063a07cd",
+            "action_id": "act_4b87a545611f",
             "case_id": "case_0214",
             "action": "escalate_to_collections",
             "amount_paise": 115124100,
@@ -237,7 +237,7 @@
             "decision": null
           },
           {
-            "action_id": "act_9aa0d5c2b5f8",
+            "action_id": "act_a20db85747c0",
             "case_id": "case_0290",
             "action": "retry_payment",
             "amount_paise": 79701000,
@@ -245,7 +245,7 @@
             "decision": null
           },
           {
-            "action_id": "act_a31c7fe3a074",
+            "action_id": "act_a589422f126b",
             "case_id": "case_0298",
             "action": "retry_payment",
             "amount_paise": 56614600,
@@ -253,7 +253,7 @@
             "decision": null
           },
           {
-            "action_id": "act_9e0020440dbe",
+            "action_id": "act_2eea3abb97ca",
             "case_id": "case_0019",
             "action": "retry_payment",
             "amount_paise": 46850900,
@@ -261,7 +261,7 @@
             "decision": null
           },
           {
-            "action_id": "act_843b67d7845d",
+            "action_id": "act_12ac8c203927",
             "case_id": "case_0029",
             "action": "escalate_to_collections",
             "amount_paise": 8958400,
@@ -269,47 +269,7 @@
             "decision": null
           },
           {
-            "action_id": "act_8df2f00d1f87",
-            "case_id": "case_0012",
-            "action": "retry_payment",
-            "amount_paise": 8805300,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_fb39e2b041fe",
-            "case_id": "case_0172",
-            "action": "retry_payment",
-            "amount_paise": 8707600,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_1d396ba2976b",
-            "case_id": "case_0059",
-            "action": "retry_payment",
-            "amount_paise": 8491300,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_fdf76292ae1d",
-            "case_id": "case_0263",
-            "action": "retry_payment",
-            "amount_paise": 8228400,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_030ff7f24068",
-            "case_id": "case_0185",
-            "action": "retry_payment",
-            "amount_paise": 7878900,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_dfd5cc36ff1e",
+            "action_id": "act_30e92d74aaf2",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -317,39 +277,7 @@
             "decision": null
           },
           {
-            "action_id": "act_da24ebdfcc69",
-            "case_id": "case_0073",
-            "action": "retry_payment",
-            "amount_paise": 7057000,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_6255ed2507e3",
-            "case_id": "case_0226",
-            "action": "retry_payment",
-            "amount_paise": 6668700,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_9e872d783f2f",
-            "case_id": "case_0165",
-            "action": "retry_payment",
-            "amount_paise": 6631900,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_98bb797a9366",
-            "case_id": "case_0260",
-            "action": "retry_payment",
-            "amount_paise": 5857700,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_e52bab28d6af",
+            "action_id": "act_8a04400d37c5",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -357,7 +285,7 @@
             "decision": null
           },
           {
-            "action_id": "act_9226dd4778c8",
+            "action_id": "act_8b40b89512ff",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -365,7 +293,7 @@
             "decision": null
           },
           {
-            "action_id": "act_380f87f05e61",
+            "action_id": "act_b983efda33f7",
             "case_id": "case_0066",
             "action": "escalate_to_collections",
             "amount_paise": 4117000,
@@ -373,7 +301,7 @@
             "decision": null
           },
           {
-            "action_id": "act_e2441dc9e37d",
+            "action_id": "act_c9177a8afb6f",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -381,7 +309,7 @@
             "decision": null
           },
           {
-            "action_id": "act_38bdb125c327",
+            "action_id": "act_a4bd9a834649",
             "case_id": "case_0293",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -389,7 +317,7 @@
             "decision": null
           },
           {
-            "action_id": "act_c4213efe7222",
+            "action_id": "act_e90ba1da9745",
             "case_id": "case_0171",
             "action": "escalate_to_collections",
             "amount_paise": 2568500,
@@ -397,15 +325,7 @@
             "decision": null
           },
           {
-            "action_id": "act_695394b31ddf",
-            "case_id": "case_0188",
-            "action": "retry_payment",
-            "amount_paise": 7176600,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_55361a477acf",
+            "action_id": "act_49bece3c7fb5",
             "case_id": "case_0204",
             "action": "retry_payment",
             "amount_paise": 68726200,
@@ -413,23 +333,7 @@
             "decision": null
           },
           {
-            "action_id": "act_532e961109aa",
-            "case_id": "case_0003",
-            "action": "retry_payment",
-            "amount_paise": 12183800,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_68f465f0e03c",
-            "case_id": "case_0206",
-            "action": "retry_payment",
-            "amount_paise": 8676700,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_0f1a60cbce57",
+            "action_id": "act_44baceba2a14",
             "case_id": "case_0285",
             "action": "retry_payment",
             "amount_paise": 91001900,
@@ -437,7 +341,7 @@
             "decision": null
           },
           {
-            "action_id": "act_3a02d4ed7a8f",
+            "action_id": "act_1c6fdf81df1c",
             "case_id": "case_0315",
             "action": "retry_payment",
             "amount_paise": 39048100,
@@ -445,7 +349,7 @@
             "decision": null
           },
           {
-            "action_id": "act_0e12663652db",
+            "action_id": "act_b0556084078f",
             "case_id": "case_0127",
             "action": "retry_payment",
             "amount_paise": 99666400,
@@ -453,26 +357,10 @@
             "decision": null
           },
           {
-            "action_id": "act_5f89390bb83b",
+            "action_id": "act_58fc736b4f98",
             "case_id": "case_0270",
             "action": "retry_payment",
             "amount_paise": 22518100,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_b616a4583512",
-            "case_id": "case_0312",
-            "action": "retry_payment",
-            "amount_paise": 7423000,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": null
-          },
-          {
-            "action_id": "act_4dec180f3f6f",
-            "case_id": "case_0317",
-            "action": "retry_payment",
-            "amount_paise": 6874700,
             "reason": "retry_payment is tier L2 and requires merchant sign-off",
             "decision": null
           }
@@ -480,40 +368,40 @@
       },
       "attribution": {
         "recovered_by_action": {
-          "retry_payment": 16447500,
+          "retry_payment": 112811400,
           "send_instrument_update_link": 9377100,
           "send_mandate_reauth_link": 131299800,
           "send_recovery_link": 33911500,
           "send_reminder": 19884900
         },
         "recovered_by_failure_family": {
-          "transient_infra": 6595000,
-          "balance_dependent": 44079700,
+          "transient_infra": 46710200,
+          "balance_dependent": 93271400,
           "mandate_broken": 120427500,
           "merchant_config": 219800,
           "instrument_dead": 9377100,
-          "customer_dropout": 30077100,
-          "limit_bound": 144600
+          "limit_bound": 7201600,
+          "customer_dropout": 30077100
         },
         "recovered_by_segment": {
           "consumer": 9035700,
-          "enterprise": 137423800,
-          "smb": 64461300
+          "enterprise": 158284300,
+          "smb": 139964700
         }
       },
       "run": {
         "arm": "agent-heuristic",
         "reasoner": "heuristic",
         "adapter": "simulator",
-        "run_id": "run_c866c6c008",
-        "wall_seconds": 4.08,
+        "run_id": "run_5b5e443d61",
+        "wall_seconds": 3.86,
         "ticks": 168,
         "deferred": 121,
         "degraded_to_heuristic": 0,
         "audit": {
           "valid": true,
-          "checked": 14574,
-          "head": "84ea4bb6cdf880734be9444dc5a1a1017481f4ec47e7c3bfb9d88d719371debe"
+          "checked": 14638,
+          "head": "d9c4601015bbe7931df88b08d6d387240bbec4d8187b6b18fbbfd58548e94e0d"
         },
         "db": "/tmp/munshi_eval_agent-heuristic.db"
       },
@@ -614,12 +502,12 @@
         "cases_over_contact_cap": 0
       },
       "approvals": {
-        "requested": 109,
+        "requested": 88,
         "pending": 0,
-        "value_paise": 2433471200,
+        "value_paise": 2268210000,
         "items": [
           {
-            "action_id": "act_cc5553743d54",
+            "action_id": "act_f422e0fe53ce",
             "case_id": "case_0064",
             "action": "retry_payment",
             "amount_paise": 120285700,
@@ -627,7 +515,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_b9526785f9a9",
+            "action_id": "act_d74a485c2d37",
             "case_id": "case_0214",
             "action": "escalate_to_collections",
             "amount_paise": 115124100,
@@ -635,7 +523,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_b34937e485d7",
+            "action_id": "act_727550efe15f",
             "case_id": "case_0290",
             "action": "retry_payment",
             "amount_paise": 79701000,
@@ -643,7 +531,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_debb7aa1107c",
+            "action_id": "act_47d2cf0d6016",
             "case_id": "case_0298",
             "action": "retry_payment",
             "amount_paise": 56614600,
@@ -651,7 +539,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_6f0432174689",
+            "action_id": "act_99a6e61d71bb",
             "case_id": "case_0019",
             "action": "retry_payment",
             "amount_paise": 46850900,
@@ -659,7 +547,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_a04263800a4f",
+            "action_id": "act_8c76d867e40b",
             "case_id": "case_0029",
             "action": "escalate_to_collections",
             "amount_paise": 8958400,
@@ -667,47 +555,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_581d8ff0a227",
-            "case_id": "case_0012",
-            "action": "retry_payment",
-            "amount_paise": 8805300,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_b58b89177d29",
-            "case_id": "case_0172",
-            "action": "retry_payment",
-            "amount_paise": 8707600,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_f149ae667c82",
-            "case_id": "case_0059",
-            "action": "retry_payment",
-            "amount_paise": 8491300,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_4aba29e62b8c",
-            "case_id": "case_0263",
-            "action": "retry_payment",
-            "amount_paise": 8228400,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_236b08d8f7c4",
-            "case_id": "case_0185",
-            "action": "retry_payment",
-            "amount_paise": 7878900,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_986570a5e15f",
+            "action_id": "act_fdf5796323cb",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -715,39 +563,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_321e3b0a2894",
-            "case_id": "case_0073",
-            "action": "retry_payment",
-            "amount_paise": 7057000,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_93bc3dfe7d43",
-            "case_id": "case_0226",
-            "action": "retry_payment",
-            "amount_paise": 6668700,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_87eb956b666d",
-            "case_id": "case_0165",
-            "action": "retry_payment",
-            "amount_paise": 6631900,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_9984c0997384",
-            "case_id": "case_0260",
-            "action": "retry_payment",
-            "amount_paise": 5857700,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_fd17217156a0",
+            "action_id": "act_15c6b87c0022",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -755,7 +571,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_6fc4054d2c71",
+            "action_id": "act_90c0372927e8",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -763,7 +579,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_1af9ec335cd1",
+            "action_id": "act_81590433a68b",
             "case_id": "case_0066",
             "action": "escalate_to_collections",
             "amount_paise": 4117000,
@@ -771,7 +587,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_cd06815ceca0",
+            "action_id": "act_04336f18f6b5",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -779,7 +595,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_411186f10d9e",
+            "action_id": "act_40a287ca7cf6",
             "case_id": "case_0293",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -787,7 +603,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_40addb5d94fa",
+            "action_id": "act_253f1c69a9e2",
             "case_id": "case_0171",
             "action": "escalate_to_collections",
             "amount_paise": 2568500,
@@ -795,15 +611,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_10c54ed5b2ef",
-            "case_id": "case_0188",
-            "action": "retry_payment",
-            "amount_paise": 7176600,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_52379c983d3d",
+            "action_id": "act_c3a74995138a",
             "case_id": "case_0204",
             "action": "retry_payment",
             "amount_paise": 68726200,
@@ -811,23 +619,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_e6dfcb60f9f6",
-            "case_id": "case_0003",
-            "action": "retry_payment",
-            "amount_paise": 12183800,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_895c3087aa2e",
-            "case_id": "case_0206",
-            "action": "retry_payment",
-            "amount_paise": 8676700,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_63e8eafad7a7",
+            "action_id": "act_bc6229ebdf53",
             "case_id": "case_0214",
             "action": "escalate_to_collections",
             "amount_paise": 115124100,
@@ -835,7 +627,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_e15a1e1b8234",
+            "action_id": "act_adfcefd32c42",
             "case_id": "case_0285",
             "action": "retry_payment",
             "amount_paise": 91001900,
@@ -843,7 +635,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_56d38fae59ee",
+            "action_id": "act_347b45133890",
             "case_id": "case_0290",
             "action": "retry_payment",
             "amount_paise": 79701000,
@@ -851,7 +643,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_26cc26445848",
+            "action_id": "act_fa9b8084c9a0",
             "case_id": "case_0298",
             "action": "retry_payment",
             "amount_paise": 56614600,
@@ -859,7 +651,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_c4614f250808",
+            "action_id": "act_cce15e517452",
             "case_id": "case_0315",
             "action": "retry_payment",
             "amount_paise": 39048100,
@@ -867,31 +659,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_780849f59279",
-            "case_id": "case_0012",
-            "action": "retry_payment",
-            "amount_paise": 8805300,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_6a6d17c42cfc",
-            "case_id": "case_0172",
-            "action": "retry_payment",
-            "amount_paise": 8707600,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_3a867f871a78",
-            "case_id": "case_0059",
-            "action": "retry_payment",
-            "amount_paise": 8491300,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_acf53065a949",
+            "action_id": "act_ada921b5365f",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -899,7 +667,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_3963fb584fc6",
+            "action_id": "act_4e780f6fa1a5",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -907,7 +675,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_05e528cea40d",
+            "action_id": "act_fe25509b24f9",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -915,7 +683,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_19ff4e1fbf28",
+            "action_id": "act_43ad4fae33e4",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -923,7 +691,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_dca2c7ff8bb8",
+            "action_id": "act_5d64fbda1b04",
             "case_id": "case_0293",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -931,7 +699,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_50d4f5538974",
+            "action_id": "act_dfc3bda49822",
             "case_id": "case_0315",
             "action": "retry_payment",
             "amount_paise": 39048100,
@@ -939,7 +707,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_20a347dd7906",
+            "action_id": "act_5b15cbbfe565",
             "case_id": "case_0214",
             "action": "escalate_to_collections",
             "amount_paise": 115124100,
@@ -947,7 +715,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_ac5d7c2cc3d0",
+            "action_id": "act_c8b6042d2881",
             "case_id": "case_0290",
             "action": "retry_payment",
             "amount_paise": 79701000,
@@ -955,7 +723,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_ea635eab70b9",
+            "action_id": "act_f29dbeb0cf01",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -963,7 +731,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_35ba3f07f0a3",
+            "action_id": "act_c8b67a74b86d",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -971,7 +739,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_45421bd8a573",
+            "action_id": "act_ddfca230b43f",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -979,7 +747,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_3761f1ceadfe",
+            "action_id": "act_8e8dcefa8f2e",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -987,7 +755,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_59b32857d3da",
+            "action_id": "act_42a7a8a4cb46",
             "case_id": "case_0293",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -995,7 +763,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_fb775945fc45",
+            "action_id": "act_29b9cf43ec11",
             "case_id": "case_0127",
             "action": "retry_payment",
             "amount_paise": 99666400,
@@ -1003,7 +771,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_05c382c22960",
+            "action_id": "act_318b251fa8b6",
             "case_id": "case_0270",
             "action": "retry_payment",
             "amount_paise": 22518100,
@@ -1011,23 +779,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_bac63d58fb6e",
-            "case_id": "case_0312",
-            "action": "retry_payment",
-            "amount_paise": 7423000,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_d72eb1c1e4a2",
-            "case_id": "case_0317",
-            "action": "retry_payment",
-            "amount_paise": 6874700,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_a5f70c1e13ec",
+            "action_id": "act_3e1928e3ce36",
             "case_id": "case_0214",
             "action": "escalate_to_collections",
             "amount_paise": 115124100,
@@ -1035,7 +787,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_23193cbe83a1",
+            "action_id": "act_6ef156db06b7",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1043,7 +795,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_789f8b9d5eb8",
+            "action_id": "act_b9bd7da3eadd",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1051,7 +803,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_2076449921de",
+            "action_id": "act_b5a7d6ddaccb",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1059,7 +811,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_a24e9937f25d",
+            "action_id": "act_eb80b4336446",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -1067,7 +819,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_2a8f8f3fdaa2",
+            "action_id": "act_33d98b98975e",
             "case_id": "case_0293",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -1075,7 +827,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_53f165ed3b96",
+            "action_id": "act_3e95ff7fdad7",
             "case_id": "case_0127",
             "action": "retry_payment",
             "amount_paise": 99666400,
@@ -1083,7 +835,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_fd2993c76209",
+            "action_id": "act_e01dfed0b1e1",
             "case_id": "case_0270",
             "action": "retry_payment",
             "amount_paise": 22518100,
@@ -1091,23 +843,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_b04281e955ea",
-            "case_id": "case_0312",
-            "action": "retry_payment",
-            "amount_paise": 7423000,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_cf50694bfe17",
-            "case_id": "case_0317",
-            "action": "retry_payment",
-            "amount_paise": 6874700,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_b1935c9844c7",
+            "action_id": "act_a588f085bf38",
             "case_id": "case_0127",
             "action": "retry_payment",
             "amount_paise": 99666400,
@@ -1115,7 +851,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_5cb87b900076",
+            "action_id": "act_27864cc2a252",
             "case_id": "case_0270",
             "action": "retry_payment",
             "amount_paise": 22518100,
@@ -1123,23 +859,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_83fc17ed1c49",
-            "case_id": "case_0312",
-            "action": "retry_payment",
-            "amount_paise": 7423000,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_3d7c05ce6bdd",
-            "case_id": "case_0317",
-            "action": "retry_payment",
-            "amount_paise": 6874700,
-            "reason": "retry_payment is tier L2 and requires merchant sign-off",
-            "decision": "approved"
-          },
-          {
-            "action_id": "act_1b9d23e436e6",
+            "action_id": "act_f6cafed9b7ee",
             "case_id": "case_0214",
             "action": "escalate_to_collections",
             "amount_paise": 115124100,
@@ -1147,7 +867,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_7ce5294a920f",
+            "action_id": "act_d9fe09264a75",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1155,7 +875,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_62b0780cc27e",
+            "action_id": "act_ed1583e97521",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1163,7 +883,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_2ae3eb71079d",
+            "action_id": "act_9f3422353679",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1171,7 +891,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_ba6009b999d4",
+            "action_id": "act_0554ff8afeb4",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -1179,7 +899,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_3ed59e260ef9",
+            "action_id": "act_3549561639ca",
             "case_id": "case_0293",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -1187,7 +907,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_6d8bb38831fc",
+            "action_id": "act_f95f521aab09",
             "case_id": "case_0214",
             "action": "escalate_to_collections",
             "amount_paise": 115124100,
@@ -1195,7 +915,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_537625a59a55",
+            "action_id": "act_45bc281f98b7",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1203,7 +923,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_8079b32fe0b8",
+            "action_id": "act_f4d2a3df9aab",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1211,7 +931,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_e6c47e872d4d",
+            "action_id": "act_8d8bf903bc5e",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1219,7 +939,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_c8277107cd41",
+            "action_id": "act_22bf0addc422",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -1227,7 +947,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_42e29386e311",
+            "action_id": "act_5dcaa7531ab4",
             "case_id": "case_0293",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -1235,7 +955,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_345abb517dc1",
+            "action_id": "act_4dfad6ffa1ce",
             "case_id": "case_0214",
             "action": "escalate_to_collections",
             "amount_paise": 115124100,
@@ -1243,7 +963,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_18ec81a99701",
+            "action_id": "act_9b3751d02dc6",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1251,7 +971,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_e005024f6ffd",
+            "action_id": "act_07f1a7ee241f",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1259,7 +979,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_288e621a4021",
+            "action_id": "act_f8f63525d48d",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1267,7 +987,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_1c2fa245420b",
+            "action_id": "act_8fe9ef7c150b",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -1275,7 +995,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_f08533c6cf91",
+            "action_id": "act_7290cb3379ac",
             "case_id": "case_0293",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -1283,7 +1003,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_3244e42eb2b8",
+            "action_id": "act_569ee878eb91",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1291,7 +1011,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_2045f84da165",
+            "action_id": "act_8f77c7e83352",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1299,7 +1019,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_4e09ee0040b8",
+            "action_id": "act_802de339dbe3",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1307,7 +1027,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_1289e345a1e2",
+            "action_id": "act_c59e5bbf6ca1",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -1315,7 +1035,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_238ab2005a7f",
+            "action_id": "act_8f66365704a0",
             "case_id": "case_0293",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -1323,7 +1043,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_4f4a285fcbcc",
+            "action_id": "act_94d008611560",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1331,7 +1051,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_3cf19063cd54",
+            "action_id": "act_d56143634d59",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1339,7 +1059,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_d6d6baf82dd3",
+            "action_id": "act_2452b3d1887a",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1347,7 +1067,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_63b643085b78",
+            "action_id": "act_025fe1e38a31",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -1355,7 +1075,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_c9ca53252aac",
+            "action_id": "act_dc6468e82eff",
             "case_id": "case_0293",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -1363,7 +1083,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_8db3c35e5766",
+            "action_id": "act_0c3e29ec39d4",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1371,7 +1091,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_c6eabaea7958",
+            "action_id": "act_f3a29ed818cf",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1379,7 +1099,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_fdbfb04d5bd7",
+            "action_id": "act_021166daa212",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1387,7 +1107,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_03a4e8b52886",
+            "action_id": "act_53e41d0e6fd0",
             "case_id": "case_0176",
             "action": "escalate_to_collections",
             "amount_paise": 3296200,
@@ -1395,7 +1115,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_72ae08e3284f",
+            "action_id": "act_e7944918c5e1",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1403,7 +1123,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_a77ee05b2d31",
+            "action_id": "act_268c0ae42ae8",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1411,7 +1131,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_58af7fb76262",
+            "action_id": "act_065294319924",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1419,7 +1139,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_1c33332d793c",
+            "action_id": "act_c95ef77f81cb",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1427,7 +1147,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_6ee40caa70b4",
+            "action_id": "act_414c402ede37",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1435,7 +1155,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_23b56faa8d7b",
+            "action_id": "act_d656534d3c3c",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1443,7 +1163,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_35b968d94dc8",
+            "action_id": "act_57486139de97",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1451,7 +1171,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_a1a848faaf7a",
+            "action_id": "act_4de0cd84e6dc",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1459,7 +1179,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_19190a723fd6",
+            "action_id": "act_5352049e4907",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1467,7 +1187,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_b9943dea0392",
+            "action_id": "act_282a72c4c1ba",
             "case_id": "case_0259",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -1475,7 +1195,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_e662d50cda62",
+            "action_id": "act_97f6a925bbfc",
             "case_id": "case_0014",
             "action": "escalate_to_collections",
             "amount_paise": 5470500,
@@ -1483,7 +1203,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_b98c5e06aaf4",
+            "action_id": "act_c185f42f5631",
             "case_id": "case_0216",
             "action": "escalate_to_collections",
             "amount_paise": 5446600,
@@ -1520,15 +1240,15 @@
         "arm": "agent-heuristic-approved",
         "reasoner": "heuristic",
         "adapter": "simulator",
-        "run_id": "run_d8ea9cbaf5",
-        "wall_seconds": 4.41,
+        "run_id": "run_3d672b01d4",
+        "wall_seconds": 5.71,
         "ticks": 168,
         "deferred": 121,
         "degraded_to_heuristic": 0,
         "audit": {
           "valid": true,
-          "checked": 15519,
-          "head": "6f1e99c8a9a187a5b05ba988998ef00ac4ece9012bb8908cd3a2d2fe02cc3ce9"
+          "checked": 15498,
+          "head": "af92fca09b53218d9815bfb63fccf5dd2a2bac12c3141e341fc3aa40caf7d375"
         },
         "db": "/tmp/munshi_eval_agent-heuristic-approved.db"
       },

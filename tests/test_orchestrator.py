@@ -5,6 +5,7 @@ from munshi.adapters.simulator import SimulatorAdapter
 from munshi.clock import VirtualClock
 from munshi.models import CaseState
 from munshi.orchestrator import Orchestrator
+from munshi.policy import POLICY
 from munshi.reason import HeuristicReasoner
 from munshi.seed.generate import BATCH_START
 from munshi.seed.load import load
@@ -82,8 +83,8 @@ def test_run_is_reproducible(tmp_path):
 
 
 def test_approval_gated_actions_stay_parked_without_a_human(conn):
-    case = make_case(conn, amount_paise=90_000 * 100, error_reason="insufficient_funds",
-                     opened_at=BATCH_START - 30 * 3600)
+    case = make_case(conn, amount_paise=POLICY["max_autonomous_retry_paise"] + 1,
+                     error_reason="insufficient_funds", opened_at=BATCH_START - 30 * 3600)
     o, _ = run(conn, days=3)
     row = db.one(conn, "SELECT state FROM cases WHERE id=?", (case["id"],))
     pending = db.scalar(conn, "SELECT COUNT(*) FROM approvals WHERE decided_at IS NULL")
@@ -94,8 +95,8 @@ def test_approval_gated_actions_stay_parked_without_a_human(conn):
 
 
 def test_rejecting_an_approval_stops_the_case(conn):
-    make_case(conn, amount_paise=90_000 * 100, error_reason="insufficient_funds",
-              opened_at=BATCH_START - 30 * 3600)
+    make_case(conn, amount_paise=POLICY["max_autonomous_retry_paise"] + 1,
+              error_reason="insufficient_funds", opened_at=BATCH_START - 30 * 3600)
     o, _ = run(conn, days=3)
     action_id = db.one(conn, "SELECT action_id FROM approvals LIMIT 1")["action_id"]
     o.reject(action_id, BATCH_START + 100, decided_by="tester")

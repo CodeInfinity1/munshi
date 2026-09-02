@@ -58,6 +58,7 @@ def test_latent_ground_truth_is_never_served(client):
     for case in listing["cases"]:
         assert "latent" not in case
     detail = client.get(f"/api/cases/{listing['cases'][0]['id']}").json()
+    assert detail["case"]["customer_name"], "detail must carry the customer name"
     blob = json.dumps(detail)
     for secret in ("funds_available_after_h", "will_replace_instrument", "true_cause",
                    "responds_to_contact", "outage_clears_after_h"):

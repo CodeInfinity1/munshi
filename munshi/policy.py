@@ -53,8 +53,11 @@ POLICY = {
     "recovery_window_days": 14,
     # MERCHANT POLICY (not regulation): the largest single re-presentment the agent
     # may make without a human. Re-presenting an amount the customer already
-    # authorised is low-risk, so this sits well above the regulatory figure below.
-    "max_autonomous_retry_paise": 50_000 * 100,
+    # authorised is low-risk -- idempotency prevents a double charge and the money is
+    # already owed -- so the reason to gate it is relationship size, not risk. This
+    # sits above the demo book's average case (~Rs 57,000); setting it below the
+    # average would queue half the book for no safety gain. Merchants tune it.
+    "max_autonomous_retry_paise": 2_00_000 * 100,
     # REGULATION: the RBI AFA-free e-mandate ceiling. Above it, only the customer
     # can complete fresh authentication, so the agent cannot present the debit at all.
     "max_autonomous_action_paise": 15_000 * 100,

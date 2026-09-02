@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Munshi design tokens.
+
+   Scene: a revenue-ops analyst at a Bengaluru merchant, 11am, bright daylight,
+   reading dense rupee tables and screenshotting rows into Slack. That is a
+   ledger, and ledgers are light. Pure white surface, cool near-white for the
+   rail and panels, near-black ink carrying a trace of the brand hue.
+
+   Colour strategy is restrained in the chrome and a full named palette in the
+   data: five money states have to be distinguishable at a glance in a stacked
+   bar, so each state owns a hue. Every state colour ships as a pair -- `fill`
+   for bars and dots, `ink` for text -- because the fill that reads best in a
+   4px bar is not the one that passes 4.5:1 as 12px type.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  --font-sans: "InterVariable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Fixed rem scale, ratio ~1.14. Product UI, not fluid type. */
+  --text-2xs: 0.6875rem;   /* 11px - table meta, rule detail */
+  --text-xs: 0.75rem;      /* 12px - labels, dense table cells */
+  --text-sm: 0.8125rem;    /* 13px - body, table cells */
+  --text-base: 0.9375rem;  /* 15px - panel body */
+  --text-lg: 1.0625rem;    /* 17px - section heads */
+  --text-xl: 1.25rem;      /* 20px - page title */
+  --text-2xl: 1.75rem;     /* 28px - money figures */
+  --text-3xl: 2.375rem;    /* 38px - the one figure that matters */
+
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Semantic z-scale. No arbitrary 9999. */
+  --z-sticky: 20;
+  --z-drawer: 40;
+  --z-toast: 60;
+}
+
+:root {
+  color-scheme: light;
+
+  --bg: oklch(1 0 0);
+  --surface: oklch(0.981 0.003 220);
+  --surface-2: oklch(0.962 0.005 220);
+  --line: oklch(0.912 0.006 220);
+  --line-strong: oklch(0.845 0.008 220);
+
+  --ink: oklch(0.235 0.014 245);
+  --ink-2: oklch(0.455 0.013 240);
+  --ink-3: oklch(0.585 0.011 238);
+
+  --brand: oklch(0.515 0.115 218);
+  --brand-ink: oklch(0.435 0.118 218);
+  --brand-soft: oklch(0.955 0.021 218);
+  --brand-line: oklch(0.855 0.048 218);
+
+  /* Money states. fill = bars and dots, ink = text on the page background. */
+  --recovered: oklch(0.605 0.128 158);
+  --recovered-ink: oklch(0.455 0.108 158);
+  --recovered-soft: oklch(0.955 0.032 158);
+
+  --at-risk: oklch(0.745 0.142 72);
+  --at-risk-ink: oklch(0.505 0.118 62);
+  --at-risk-soft: oklch(0.968 0.038 78);
+
+  --held: oklch(0.585 0.135 288);
+  --held-ink: oklch(0.475 0.135 288);
+  --held-soft: oklch(0.962 0.026 288);
+
+  --stopped: oklch(0.635 0.012 240);
+  --stopped-ink: oklch(0.455 0.013 240);
+  --stopped-soft: oklch(0.955 0.004 240);
+
+  --escalated: oklch(0.605 0.168 28);
+  --escalated-ink: oklch(0.485 0.165 28);
+  --escalated-soft: oklch(0.963 0.026 28);
+
+  --suppressed: oklch(0.755 0.008 240);
+  --suppressed-ink: oklch(0.525 0.010 240);
+  --suppressed-soft: oklch(0.968 0.003 240);
+
+  --shadow-panel: 0 1px 2px oklch(0.235 0.014 245 / 0.05),
+    0 1px 1px oklch(0.235 0.014 245 / 0.03);
+  --shadow-drawer: -8px 0 32px oklch(0.235 0.014 245 / 0.08);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: oklch(0.185 0.012 245);
+  --surface: oklch(0.218 0.013 245);
+  --surface-2: oklch(0.258 0.014 245);
+  --line: oklch(0.315 0.014 245);
+  --line-strong: oklch(0.395 0.015 245);
+
+  --ink: oklch(0.945 0.005 230);
+  --ink-2: oklch(0.755 0.010 235);
+  --ink-3: oklch(0.635 0.012 238);
+
+  --brand: oklch(0.735 0.105 218);
+  --brand-ink: oklch(0.795 0.098 218);
+  --brand-soft: oklch(0.288 0.042 218);
+  --brand-line: oklch(0.395 0.058 218);
+
+  --recovered: oklch(0.715 0.132 158);
+  --recovered-ink: oklch(0.795 0.118 158);
+  --recovered-soft: oklch(0.288 0.048 158);
+
+  --at-risk: oklch(0.775 0.135 76);
+  --at-risk-ink: oklch(0.835 0.118 76);
+  --at-risk-soft: oklch(0.298 0.050 66);
+
+  --held: oklch(0.715 0.118 288);
+  --held-ink: oklch(0.795 0.108 288);
+  --held-soft: oklch(0.295 0.050 288);
+
+  --stopped: oklch(0.545 0.012 240);
+  --stopped-ink: oklch(0.715 0.012 240);
+  --stopped-soft: oklch(0.272 0.008 240);
+
+  --escalated: oklch(0.685 0.155 28);
+  --escalated-ink: oklch(0.775 0.140 28);
+  --escalated-soft: oklch(0.302 0.058 28);
+
+  --suppressed: oklch(0.455 0.010 240);
+  --suppressed-ink: oklch(0.655 0.010 240);
+  --suppressed-soft: oklch(0.258 0.006 240);
+
+  --shadow-panel: 0 1px 2px oklch(0 0 0 / 0.28);
+  --shadow-drawer: -8px 0 32px oklch(0 0 0 / 0.42);
+}
+
+* { border-color: var(--line); }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Money is compared column-to-column constantly here. Digits must not jitter. */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "cv05" 1; }
+
+.mono { font-family: var(--font-mono); font-variant-ligatures: none; }
+
+/* One focus treatment for the whole surface. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+::selection { background: var(--brand-soft); color: var(--brand-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Scrollbars: familiar, just quieter. Not reinvented. */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border: 3px solid var(--bg);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+}
+
+@keyframes slidein { from { transform: translateX(16px); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }

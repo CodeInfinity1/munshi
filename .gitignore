@@ -22,3 +22,6 @@ munshi/static/
 
 # OS
 .DS_Store
+
+# TS incremental build cache
+web/*.tsbuildinfo
