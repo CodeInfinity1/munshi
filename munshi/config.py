@@ -28,7 +28,9 @@ class Settings:
 
     # --- reasoning -----------------------------------------------------------
     anthropic_api_key: str | None = os.getenv("ANTHROPIC_API_KEY") or None
-    llm_model: str = os.getenv("MUNSHI_LLM_MODEL", "claude-sonnet-5")
+    llm_model: str = os.getenv("MUNSHI_LLM_MODEL", "claude-opus-5")
+    llm_effort: str = os.getenv("MUNSHI_LLM_EFFORT", "low")
+    llm_concurrency: int = field(default_factory=lambda: _int("MUNSHI_LLM_CONCURRENCY", 8))
 
     # --- execution -----------------------------------------------------------
     adapter: str = os.getenv("MUNSHI_ADAPTER", "simulator")
