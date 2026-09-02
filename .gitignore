@@ -25,3 +25,5 @@ munshi/static/
 
 # TS incremental build cache
 web/*.tsbuildinfo
+web/tsconfig.*.tsbuildinfo
+web/tsconfig.node.tsbuildinfo
