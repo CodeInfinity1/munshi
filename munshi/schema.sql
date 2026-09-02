@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS cases (
     days_overdue        INTEGER NOT NULL DEFAULT 0,
     mrr_paise           INTEGER NOT NULL DEFAULT 0,   -- subscriptions: recurring value at risk
     next_action_at      INTEGER,               -- scheduled wake-up
+    promise_to_pay_at   INTEGER,               -- customer committed to pay by this date
     stop_reason         TEXT,
     recovered_paise     INTEGER NOT NULL DEFAULT 0,
     latent              TEXT,                  -- json: simulator ground truth. NEVER read by the agent.

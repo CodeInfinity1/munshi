@@ -156,6 +156,9 @@ class PolicyDecision:
     decision: str                          # allow | require_approval | deny
     rules: list[RuleVerdict]
     stop_reason: str | None = None
+    #: When set, the action was refused *for now* rather than forever: the case is
+    #: rescheduled to this instant instead of being closed.
+    reschedule_at: int | None = None
 
     @property
     def blocked_by(self) -> list[str]:
