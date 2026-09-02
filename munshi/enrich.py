@@ -60,7 +60,10 @@ def build_context(conn: sqlite3.Connection, case: sqlite3.Row | dict, now: int) 
             "attempts_before_munshi": case["prior_attempts"],
             "contacts_sent": case["contacts_sent"],
             # Bounded resources. An action whose budget is spent is not available,
-            # and proposing it wastes the tick.
+            # and proposing it wastes the tick. These read the default policy: the
+            # engine is authoritative and re-checks them, so a per-engine override
+            # can only make the reasoner more conservative than necessary, never
+            # less.
             "retries_remaining": max(0, POLICY["max_recovery_attempts"] - case["attempts"]),
             "contacts_remaining": max(0, POLICY["max_customer_contacts"] - case["contacts_sent"]),
         },
