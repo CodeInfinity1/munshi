@@ -43,7 +43,6 @@ class Tier:
 ActionType = Literal[
     "no_action",
     "retry_payment",
-    "schedule_retry",
     "send_recovery_link",
     "send_instrument_update_link",
     "send_mandate_reauth_link",
@@ -62,7 +61,6 @@ ActionType = Literal[
 ACTION_TIERS: dict[str, int] = {
     "no_action": Tier.OBSERVE,
     "suppress_case": Tier.OBSERVE,
-    "schedule_retry": Tier.AUTO,
     "retry_payment": Tier.AUTO,
     "send_recovery_link": Tier.AUTO,
     "send_instrument_update_link": Tier.AUTO,
@@ -79,6 +77,9 @@ ACTION_TIERS: dict[str, int] = {
 }
 
 #: Actions that put money at stake or reach a human. Used for exposure accounting.
+#: Actions that re-present or alter money. Every one of these is subject to the
+#: autonomous-amount ceiling. A retry's timing lives in `delay_hours`, not in a
+#: second action name -- two names for one operation is how a bound gets bypassed.
 MONEY_MOVING = frozenset({"retry_payment", "offer_partial_payment", "issue_discount"})
 CUSTOMER_CONTACTING = frozenset(
     {

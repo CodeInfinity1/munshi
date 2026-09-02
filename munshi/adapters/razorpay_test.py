@@ -65,7 +65,7 @@ class RazorpayTestAdapter:
     def execute(self, action_type: str, case: dict, params: dict, now: int) -> ActionResult:
         if action_type in LINK_ACTIONS:
             return self._payment_link(action_type, case, params)
-        if action_type in ("retry_payment", "schedule_retry"):
+        if action_type == "retry_payment":
             raise UnsupportedInTestMode(
                 "re-presenting a failed charge requires a customer-authorised mandate "
                 "token (POST /v1/payments/:id/recurring); Razorpay test mode cannot mint "

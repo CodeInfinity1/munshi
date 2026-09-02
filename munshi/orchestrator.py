@@ -27,8 +27,8 @@ from .config import settings
 from .db import jdump
 from .enrich import build_context
 from .models import ACTION_TIERS, CaseState, Tier
-from .taxonomy import lookup
 from .policy import PolicyEngine
+from .taxonomy import lookup
 
 log = logging.getLogger("munshi.orchestrator")
 
@@ -39,7 +39,7 @@ TERMINAL_ACTIONS = {
     "open_engineering_ticket": CaseState.ESCALATED,
     "escalate_to_collections": CaseState.ESCALATED,
 }
-RETRY_ACTIONS = {"retry_payment", "schedule_retry"}
+RETRY_ACTIONS = {"retry_payment"}
 CONTACT_ACTIONS = {
     "send_recovery_link", "send_instrument_update_link", "send_mandate_reauth_link",
     "send_reminder", "offer_partial_payment", "issue_discount",
@@ -301,7 +301,6 @@ class Orchestrator:
         if result.outcome == "pending":
             return self._handle_pending(case, action_id, result, now)
         if plan.action_type == "no_action":
-            sem = lookup(case.get("error_reason"))
             spent = (case["attempts"] >= self.policy.p["max_recovery_attempts"]
                      or case["contacts_sent"] >= self.policy.p["max_customer_contacts"])
             return self._stop(case, now,

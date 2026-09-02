@@ -8,7 +8,7 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "pydantic>=2.9",
     "httpx>=0.27",
-    "anthropic>=0.40",
+    "anthropic>=0.117",   # output_config structured outputs
     "python-dotenv>=1.0",
 ]
 

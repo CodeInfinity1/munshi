@@ -58,13 +58,16 @@ POLICY = {
     # REGULATION: the RBI AFA-free e-mandate ceiling. Above it, only the customer
     # can complete fresh authentication, so the agent cannot present the debit at all.
     "max_autonomous_action_paise": 15_000 * 100,
-    # Total money-moving exposure one run may put in flight without sign-off.
-    "max_run_exposure_paise": 25_00_000 * 100,
+    # Circuit breaker, not a throttle: the total distinct value one run may put in
+    # flight. Sized deliberately above a normal batch -- it exists to stop a bug or
+    # an injected instruction from hammering the whole book, not to ration ordinary
+    # recovery. Each case counts once however many times it is retried.
+    "max_run_exposure_paise": 2_00_00_000 * 100,
     "escalate_to_collections_min_paise": 25_000 * 100,
     "escalate_to_collections_min_days_overdue": 45,
 }
 
-RETRY_ACTIONS = frozenset({"retry_payment", "schedule_retry"})
+RETRY_ACTIONS = frozenset({"retry_payment"})
 
 
 class PolicyEngine:
@@ -72,15 +75,15 @@ class PolicyEngine:
         self.conn = conn
         self.p = {**POLICY, **(policy or {})}
         self.tz = settings().timezone
-        self._run_exposure_paise = 0
+        self._exposed_cases: dict[str, int] = {}
 
     # -- exposure is per-run state, so it is reset explicitly by the orchestrator
     def begin_run(self) -> None:
-        self._run_exposure_paise = 0
+        self._exposed_cases = {}
 
     @property
     def run_exposure_paise(self) -> int:
-        return self._run_exposure_paise
+        return sum(self._exposed_cases.values())
 
     def evaluate(self, case: dict, plan, ctx: dict, now: int) -> PolicyDecision:
         rules: list[RuleVerdict] = []
@@ -262,7 +265,10 @@ class PolicyEngine:
                 f"Rs {amount / 100:,.0f} vs autonomous ceiling Rs {cap / 100:,.0f} ({source})",
                 None if within else "require_approval")
 
-            projected = self._run_exposure_paise + amount
+            # Re-presenting the same case three times is one case of exposure, not
+            # three. Counting per action would trip the breaker on normal operation.
+            projected = self.run_exposure_paise + (
+                0 if case["id"] in self._exposed_cases else amount)
             run_cap = self.p["max_run_exposure_paise"]
             add("run_exposure_cap", projected <= run_cap,
                 f"run exposure would reach Rs {projected / 100:,.0f} of Rs {run_cap / 100:,.0f}",
@@ -303,7 +309,7 @@ class PolicyEngine:
 
         decision = self._finish(rules)
         if decision.decision == "allow" and is_money:
-            self._run_exposure_paise += amount
+            self._exposed_cases[case["id"]] = amount
         return decision
 
     # ------------------------------------------------------------------

@@ -15,22 +15,22 @@ Every arm runs the **same cases with the same latent ground truth and the same p
 | Metric | baseline | agent-heuristic | agent-heuristic-approved |
 |---|---|---|---|
 | Revenue at risk | Rs 18,320,352 | Rs 18,320,352 | Rs 18,320,352 |
-| **Revenue recovered** | **Rs 8,121,139** | **Rs 4,440,698** | **Rs 7,454,560** |
-| Recovery rate (of at-risk) | 44.33% | 24.24% | 40.69% |
-| Recovery rate (of recoverable) | 53.31% | 29.15% | 48.93% |
-| Cases recovered | 136/320 | 118/320 | 130/320 |
-| Held for merchant approval | Rs 0 | Rs 4,415,972 | Rs 0 |
-| Annualised MRR protected | Rs 42,085,536 | Rs 18,908,124 | Rs 31,864,848 |
+| **Revenue recovered** | **Rs 8,121,139** | **Rs 2,109,208** | **Rs 7,454,560** |
+| Recovery rate (of at-risk) | 44.33% | 11.51% | 40.69% |
+| Recovery rate (of recoverable) | 53.31% | 13.85% | 48.93% |
+| Cases recovered | 136/320 | 109/320 | 130/320 |
+| Held for merchant approval | Rs 0 | Rs 8,909,294 | Rs 0 |
+| Annualised MRR protected | Rs 42,085,536 | Rs 16,026,180 | Rs 31,864,848 |
 
 ## Efficiency and harm
 
 | Metric | baseline | agent-heuristic | agent-heuristic-approved |
 |---|---|---|---|
-| Actions executed | 1048 | 863 | 944 |
-| Retries spent | 486 | 245 | 255 |
+| Actions executed | 1048 | 827 | 944 |
+| Retries spent | 486 | 217 | 255 |
 | **Retries with zero possible yield** | **201** (41.36%) | **0** (0.0%) | **0** (0.0%) |
-| Customer messages sent | 562 | 529 | 600 |
-| Messages per recovered case | 4.13 | 4.48 | 4.62 |
+| Customer messages sent | 562 | 526 | 600 |
+| Messages per recovered case | 4.13 | 4.83 | 4.62 |
 | **Customers chased after paying** | **15** | **0** | **0** |
 | Opted-out customers contacted | 18 | 0 | 0 |
 | Intervention accuracy | 66.56% | 87.19% | 87.19% |
@@ -54,11 +54,11 @@ The baseline is run *without* the compliance envelope, because a naive dunning c
 | Cases over the 3-contact cap | 0 | 0 | 0 |
 | Every case reached a terminal state | True | True | True |
 | Audit chain verifies | True | True | True |
-| Audit records | 15962 | 14696 | 15491 |
+| Audit records | 15962 | 14574 | 15519 |
 
 ## Arm detail: baseline
 
-- reasoner `fixed_ladder`, adapter `simulator`, 4.27s over 168 ticks
+- reasoner `fixed_ladder`, adapter `simulator`, 4.32s over 168 ticks
 
 Why cases stopped:
 
@@ -73,13 +73,13 @@ Recovery attributed by action:
 
 ## Arm detail: agent-heuristic
 
-- reasoner `heuristic`, adapter `simulator`, 4.26s over 168 ticks
+- reasoner `heuristic`, adapter `simulator`, 4.08s over 168 ticks
 
 Why cases stopped:
 
-- `recovered` - 118
+- `recovered` - 109
 - `recovery_window_expired` - 87
-- `all_recovery_avenues_exhausted` - 78
+- `all_recovery_avenues_exhausted` - 73
 - `escalate_to_merchant_ops_completed` - 9
 - `suppress_case_completed` - 5
 - `customer_opted_out` - 3
@@ -88,16 +88,15 @@ Why cases stopped:
 
 Recovery attributed by action:
 
-- `schedule_retry` - Rs 2,449,208
 - `send_mandate_reauth_link` - Rs 1,312,998
 - `send_recovery_link` - Rs 339,115
 - `send_reminder` - Rs 198,849
+- `retry_payment` - Rs 164,475
 - `send_instrument_update_link` - Rs 93,771
-- `retry_payment` - Rs 46,757
 
 ## Arm detail: agent-heuristic-approved
 
-- reasoner `heuristic`, adapter `simulator`, 4.32s over 168 ticks
+- reasoner `heuristic`, adapter `simulator`, 4.41s over 168 ticks
 
 Why cases stopped:
 
@@ -112,8 +111,7 @@ Why cases stopped:
 
 Recovery attributed by action:
 
-- `retry_payment` - Rs 2,904,180
-- `schedule_retry` - Rs 2,449,208
+- `retry_payment` - Rs 5,353,388
 - `send_mandate_reauth_link` - Rs 1,312,998
 - `send_recovery_link` - Rs 339,115
 - `send_reminder` - Rs 198,849

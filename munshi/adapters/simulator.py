@@ -97,7 +97,7 @@ class SimulatorAdapter:
         latent = jload(case.get("latent"), {}) or {}
         if action_type in OPERATIONAL:
             return ActionResult(outcome="success", detail={"kind": "operational"})
-        if action_type in ("retry_payment", "schedule_retry"):
+        if action_type == "retry_payment":
             return self._retry(case, latent, now)
         if action_type in CONTACT_BASE:
             return self._contact(action_type, case, latent, now)
@@ -129,21 +129,26 @@ class SimulatorAdapter:
             )
         return ActionResult(outcome="failed", detail={**detail, "captured": False})
 
+    #: Which latent field carries each family's retry precondition, and what it means.
+    _PRECONDITIONS = {
+        "balance_dependent": ("funds_available_after_h", "payer balance covers the amount"),
+        "transient_infra": ("outage_clears_after_h", "underlying outage clears"),
+        "limit_bound": ("limit_resets_after_h", "instrument limit window resets"),
+        "merchant_config": ("merchant_fixes_after_h", "merchant corrects the configuration"),
+    }
+
     def _precondition_met(self, family: str, latent: dict, elapsed_h: float) -> tuple[bool, str]:
         """The single fact that determines whether a retry could work right now."""
-        if family == "balance_dependent":
-            h = latent.get("funds_available_after_h")
-            return elapsed_h >= h, f"payer balance covers the amount from +{h}h"
-        if family == "transient_infra":
-            h = latent.get("outage_clears_after_h", 0)
-            return elapsed_h >= h, f"underlying outage clears at +{h}h"
-        if family == "limit_bound":
-            h = latent.get("limit_resets_after_h", 24)
-            return elapsed_h >= h, f"instrument limit window resets at +{h}h"
-        if family == "merchant_config":
-            h = latent.get("merchant_fixes_after_h", 48)
-            return elapsed_h >= h, f"merchant corrects the configuration at +{h}h"
-        return False, "no retry precondition can be satisfied for this failure family"
+        entry = self._PRECONDITIONS.get(family)
+        if entry is None:
+            return False, "no retry precondition can be satisfied for this failure family"
+        field, description = entry
+        h = latent.get(field)
+        if h is None:
+            # No ground truth for this case (e.g. one ingested live rather than
+            # generated). The simulator will not guess an outcome it cannot resolve.
+            return False, f"{description}: unknown, no ground truth for this case"
+        return elapsed_h >= h, f"{description} at +{h}h"
 
     # ------------------------------------------------------------------
     def _contact(self, action_type: str, case: dict, latent: dict, now: int) -> ActionResult:

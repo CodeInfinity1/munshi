@@ -36,10 +36,10 @@ CORRECT_INTERVENTION = {
     "integration_bug": {"open_engineering_ticket", "escalate_to_merchant_ops", "no_action"},
     "instrument_dead": {"send_instrument_update_link", "send_recovery_link", "no_action"},
     "mandate_broken": {"send_mandate_reauth_link", "send_reminder", "no_action"},
-    "balance_dependent": {"schedule_retry", "retry_payment", "send_reminder",
+    "balance_dependent": {"retry_payment", "send_reminder",
                           "send_recovery_link", "offer_partial_payment"},
-    "transient_infra": {"schedule_retry", "retry_payment", "send_recovery_link"},
-    "limit_bound": {"schedule_retry", "retry_payment", "send_recovery_link"},
+    "transient_infra": {"retry_payment", "send_recovery_link"},
+    "limit_bound": {"retry_payment", "send_recovery_link"},
     "customer_dropout": {"send_recovery_link", "send_reminder"},
 }
 
@@ -61,7 +61,7 @@ def compute(conn: sqlite3.Connection, violations: list[dict] | None = None) -> d
     recovered_cases = db.scalar(conn, "SELECT COUNT(DISTINCT case_id) FROM ledger")
 
     executed = [a for a in actions if a["executed_at"]]
-    retries = [a for a in executed if a["action_type"] in ("retry_payment", "schedule_retry")]
+    retries = [a for a in executed if a["action_type"] == "retry_payment"]
     contacts = [a for a in executed if a["action_type"] in CONTACT_ACTIONS]
 
     wasted_retries = [

@@ -21,27 +21,38 @@ def _int(name: str, default: int) -> int:
     return int(raw) if raw and raw.strip() else default
 
 
+def _env(name: str, default: str | None = None):
+    """Read at construction time, not at class-definition time.
+
+    Plain dataclass defaults are evaluated once when the module is imported, which
+    silently froze configuration before a .env file or a test fixture could change
+    it. Every field here goes through a factory instead.
+    """
+    v = os.getenv(name)
+    return v if v not in (None, "") else default
+
+
 @dataclass(frozen=True)
 class Settings:
-    db_path: Path = field(default_factory=lambda: Path(os.getenv("MUNSHI_DB", "munshi.db")))
-    timezone: str = os.getenv("MUNSHI_TIMEZONE", "Asia/Kolkata")
+    db_path: Path = field(default_factory=lambda: Path(_env("MUNSHI_DB", "munshi.db")))
+    timezone: str = field(default_factory=lambda: _env("MUNSHI_TIMEZONE", "Asia/Kolkata"))
 
     # --- reasoning -----------------------------------------------------------
-    anthropic_api_key: str | None = os.getenv("ANTHROPIC_API_KEY") or None
-    llm_model: str = os.getenv("MUNSHI_LLM_MODEL", "claude-opus-5")
-    llm_effort: str = os.getenv("MUNSHI_LLM_EFFORT", "low")
+    anthropic_api_key: str | None = field(default_factory=lambda: _env("ANTHROPIC_API_KEY"))
+    llm_model: str = field(default_factory=lambda: _env("MUNSHI_LLM_MODEL", "claude-opus-5"))
+    llm_effort: str = field(default_factory=lambda: _env("MUNSHI_LLM_EFFORT", "low"))
     llm_concurrency: int = field(default_factory=lambda: _int("MUNSHI_LLM_CONCURRENCY", 8))
 
     # --- execution -----------------------------------------------------------
-    adapter: str = os.getenv("MUNSHI_ADAPTER", "simulator")
-    razorpay_key_id: str | None = os.getenv("RAZORPAY_KEY_ID") or None
-    razorpay_key_secret: str | None = os.getenv("RAZORPAY_KEY_SECRET") or None
-    razorpay_webhook_secret: str | None = os.getenv("RAZORPAY_WEBHOOK_SECRET") or None
+    adapter: str = field(default_factory=lambda: _env("MUNSHI_ADAPTER", "simulator"))
+    razorpay_key_id: str | None = field(default_factory=lambda: _env("RAZORPAY_KEY_ID"))
+    razorpay_key_secret: str | None = field(default_factory=lambda: _env("RAZORPAY_KEY_SECRET"))
+    razorpay_webhook_secret: str | None = field(
+        default_factory=lambda: _env("RAZORPAY_WEBHOOK_SECRET"))
 
     # --- api -----------------------------------------------------------------
     api_token: str = field(
-        default_factory=lambda: os.getenv("MUNSHI_API_TOKEN") or secrets.token_urlsafe(24)
-    )
+        default_factory=lambda: _env("MUNSHI_API_TOKEN") or secrets.token_urlsafe(24))
     rate_limit_per_minute: int = field(default_factory=lambda: _int("MUNSHI_RATE_LIMIT", 120))
 
     @property
@@ -57,6 +68,7 @@ class Settings:
         return {
             "reasoner": "llm" if self.llm_available else "heuristic",
             "llm_model": self.llm_model if self.llm_available else None,
+            "llm_effort": self.llm_effort if self.llm_available else None,
             "adapter": self.effective_adapter,
             "razorpay_credentials_present": self.razorpay_credentials_present,
             "timezone": self.timezone,

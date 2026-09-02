@@ -258,7 +258,7 @@ class HeuristicReasoner:
                         "different method here."
                     )
                 # A live outage is measured from now: it is happening now.
-                return "schedule_retry", float(dt.get("hold_hours", 2.0)), None
+                return "retry_payment", float(dt.get("hold_hours", 2.0)), None
             if can_retry:
                 return "retry_payment", backoff(float(sem.min_backoff_hours or 2)), None
         # balance_dependent and limit_bound: the retry has to wait on a precondition
@@ -271,7 +271,7 @@ class HeuristicReasoner:
                 f"{sem.description} You can pay using this link whenever you are ready."
             )
         if can_retry:
-            return "schedule_retry", wait, None
+            return "retry_payment", wait, None
         if can_contact:
             # Retries are spent, but the payer can still be handed a link to pay
             # directly. This is the recovery a contact-budget-ends-the-case design

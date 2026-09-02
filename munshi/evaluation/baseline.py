@@ -98,7 +98,7 @@ class LadderPolicy:
             rules.append(RuleVerdict("autonomy_tier", False, f"{action} is L4", "deny"))
             return PolicyDecision("deny", rules, stop_reason="forbidden_action")
 
-        if action in ("retry_payment", "schedule_retry"):
+        if action == "retry_payment":
             ok = case["attempts"] < self.p["max_recovery_attempts"]
             rules.append(RuleVerdict("retry_budget", ok,
                                      f"{case['attempts']}/{self.p['max_recovery_attempts']}",
