@@ -27,6 +27,7 @@ from .config import settings
 from .db import jdump
 from .enrich import build_context
 from .models import ACTION_TIERS, CaseState, Tier
+from .taxonomy import lookup
 from .policy import PolicyEngine
 
 log = logging.getLogger("munshi.orchestrator")
@@ -284,12 +285,28 @@ class Orchestrator:
         if result.outcome == "success" and result.recovered_paise > 0:
             return self._record_recovery(case, action_id, result, now)
         if plan.action_type in TERMINAL_ACTIONS and result.outcome == "success":
+            # Alerting merchant ops hands the fix to a human but does not settle the
+            # money. Keep watching so a re-presentment happens once they act.
+            if (plan.action_type == "escalate_to_merchant_ops"
+                    and lookup(case.get("error_reason")).family == "merchant_config"):
+                audit.record(self.conn, ts=now, run_id=self.run_id, case_id=case["id"],
+                             action_id=action_id, stage="stop",
+                             summary="merchant ops alerted; case stays open to re-present "
+                                     "once the configuration is fixed",
+                             detail={"handoff": "merchant_ops", "case_remains_open": True})
+                return self._schedule(case, int(now + 24 * 3600), now,
+                                      "awaiting merchant configuration fix")
             return self._terminal(case, now, TERMINAL_ACTIONS[plan.action_type],
                                   f"{plan.action_type}_completed")
         if result.outcome == "pending":
             return self._handle_pending(case, action_id, result, now)
         if plan.action_type == "no_action":
-            return self._stop(case, now, "no_intervention_worth_taking")
+            sem = lookup(case.get("error_reason"))
+            spent = (case["attempts"] >= self.policy.p["max_recovery_attempts"]
+                     or case["contacts_sent"] >= self.policy.p["max_customer_contacts"])
+            return self._stop(case, now,
+                              "all_recovery_avenues_exhausted" if spent
+                              else "no_intervention_worth_taking")
         # Failed. Wake at the earliest instant a further attempt could actually be
         # permitted -- waking sooner only produces a decision that policy is
         # guaranteed to refuse, and in the LLM arm that is a wasted model call.
@@ -404,6 +421,23 @@ class Orchestrator:
         if reason in ("risk_decline_requires_human_review", "emandate_requires_customer_afa",
                       "not_a_customer_resolvable_failure", "adapter_cannot_execute"):
             return self._escalate(case, now, reason)
+        # Running out of one budget closes that avenue, not the case. Only stop when
+        # nothing is left to try -- otherwise a spent contact allowance writes off
+        # revenue a remaining retry could still have collected.
+        if reason in ("max_contacts_reached", "max_retry_attempts_reached"):
+            from .taxonomy import lookup as _lookup
+
+            sem = _lookup(case.get("error_reason"))
+            p = self.policy.p
+            retries_left = case["attempts"] < p["max_recovery_attempts"] and not sem.retry_is_futile
+            contacts_left = (case["contacts_sent"] < p["max_customer_contacts"]
+                             and sem.contacts_customer)
+            if retries_left or contacts_left:
+                wait = (p["min_hours_between_retries"] if retries_left
+                        else p["min_hours_between_contacts"])
+                return self._schedule(case, int(now + wait * 3600), now,
+                                      f"{reason}; switching to the remaining avenue")
+            return self._stop(case, now, "all_recovery_avenues_exhausted")
         return self._stop(case, now, reason)
 
     def _queue_approval(self, case, action_id, plan, now) -> None:

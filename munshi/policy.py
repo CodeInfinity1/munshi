@@ -51,8 +51,12 @@ POLICY = {
     "min_hours_between_retries": 6,
     "min_hours_between_contacts": 20,
     "recovery_window_days": 14,
-    # Above this, a money-moving action needs a human. Chosen to sit under the
-    # RBI AFA-free e-mandate ceiling so autonomous debits stay inside it.
+    # MERCHANT POLICY (not regulation): the largest single re-presentment the agent
+    # may make without a human. Re-presenting an amount the customer already
+    # authorised is low-risk, so this sits well above the regulatory figure below.
+    "max_autonomous_retry_paise": 50_000 * 100,
+    # REGULATION: the RBI AFA-free e-mandate ceiling. Above it, only the customer
+    # can complete fresh authentication, so the agent cannot present the debit at all.
     "max_autonomous_action_paise": 15_000 * 100,
     # Total money-moving exposure one run may put in flight without sign-off.
     "max_run_exposure_paise": 25_00_000 * 100,
@@ -183,7 +187,11 @@ class PolicyEngine:
 
             notified = self._last_execution(case["id"], {"send_reminder"})
             ok, note = mandate_debit_ok(amount, notified, now)
-            add("emandate_pre_debit_notice", ok, note, "deny")
+            # Above the AFA ceiling this is permanent -- only the customer can
+            # re-authenticate. Below it, the notice merely has not been sent yet,
+            # which is a deferral, not a write-off.
+            permanent = amount > self.p["max_autonomous_action_paise"]
+            add("emandate_pre_debit_notice", ok, note, "deny" if permanent else None)
             if not ok:
                 # Above the AFA ceiling only the customer can re-authenticate; below
                 # it we simply have not sent the notification yet, so send it.
@@ -246,10 +254,12 @@ class PolicyEngine:
 
         # --- financial exposure ----------------------------------------------
         if is_money:
-            cap = self.p["max_autonomous_action_paise"]
+            cap = (self.p["max_autonomous_retry_paise"] if is_retry
+                   else self.p["max_autonomous_action_paise"])
+            source = "merchant policy" if is_retry else "RBI AFA-free e-mandate ceiling"
             within = amount <= cap
             add("autonomous_amount_ceiling", within,
-                f"Rs {amount / 100:,.0f} vs autonomous ceiling Rs {cap / 100:,.0f}",
+                f"Rs {amount / 100:,.0f} vs autonomous ceiling Rs {cap / 100:,.0f} ({source})",
                 None if within else "require_approval")
 
             projected = self._run_exposure_paise + amount
@@ -298,7 +308,14 @@ class PolicyEngine:
 
     # ------------------------------------------------------------------
     def _finish(self, rules, stop_reason=None, reschedule_at=None) -> PolicyDecision:
-        """Resolve the verdicts. deny beats require_approval beats allow."""
+        """Resolve the verdicts. deny beats require_approval beats allow, and a
+        permanent denial beats a temporary one."""
+        hard_deny = next((r for r in rules if not r.passed and r.escalate_to == "deny"), None)
+        if hard_deny is not None and reschedule_at is not None:
+            # A later rule asked to defer, but an earlier rule already said this can
+            # never work. Deferring would loop the case until the window expires.
+            reschedule_at = None
+            stop_reason = stop_reason or hard_deny.rule
         decision = "allow"
         for r in rules:
             if r.passed:

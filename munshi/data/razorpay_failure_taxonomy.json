@@ -66,10 +66,10 @@
     },
     "merchant_config": {
       "label": "Merchant account or method not configured",
-      "retryability": "never",
+      "retryability": "after_state_change",
       "blame": "merchant",
       "default_intervention": "merchant_ops_alert",
-      "rationale": "No amount of customer contact fixes this. Chasing the customer is an actively wrong action; the merchant must enable the method."
+      "rationale": "No amount of customer contact fixes this -- chasing the customer is an actively wrong action. But it is not permanently unrecoverable either: once the merchant enables the method, the payment can be re-presented. Alert merchant ops, then probe."
     },
     "integration_bug": {
       "label": "Malformed request from the merchant integration",

@@ -89,7 +89,7 @@ YOUR JUDGEMENT IS WANTED ON
 low recoverability is a correct and valuable answer, not a failure to engage.
 - The customer-facing message, when one is warranted.
 
-TIMING. `delay_hours` is measured from now. Use it deliberately:
+TIMING. `delay_hours` is measured from NOW, but the preconditions are measured from when the failure happened -- `case.age_hours`. A 24-hour balance backoff on a failure that is already six days old has been satisfied for five days; waiting another 24 hours burns window for nothing. Subtract the age before you wait. Use timing deliberately:
 - Balance problems: time the retry to when money plausibly lands, and prefer the \
 customer's `typical_success_hour_local` when one is known.
 - Active downtime: wait past `downtime.hold_hours`.
@@ -142,7 +142,8 @@ class HeuristicReasoner:
         elif kind == "checkout_abandoned":
             cause = "customer_abandoned"
 
-        action, delay, msg = self._select(kind, family, sem, case, cust, dt, ctx["compliance"])
+        action, delay, msg = self._select(kind, family, sem, case, cust, dt,
+                                          ctx["compliance"], ctx)
         channel = cust.get("preferred_channel") or "email" if msg else "none"
         recoverability = self._recoverability(family, kind, case, cust)
 
@@ -158,14 +159,51 @@ class HeuristicReasoner:
         )
         return diag, plan
 
-    def _select(self, kind, family, sem, case, cust, dt, comp):
+    def _select(self, kind, family, sem, case, cust, dt, comp, ctx):
+        """Pick one action. Ordered so that hard stops come before interventions,
+        and preconditions come before the action they gate."""
         amount = case["amount_inr"]
-        # Recurring debits have two preconditions before a retry is even legal, and
-        # each has its own unblocking action. Writing the case off instead of taking
-        # that action throws away recoverable revenue.
-        if case["method"] == "emandate" and family not in (
-            "already_settled", "risk_flagged", "merchant_config", "integration_bug"
-        ):
+
+        if kind == "invoice_overdue":
+            if case["days_overdue"] > 60 and amount >= 25_000:
+                return "escalate_to_collections", 0.0, None
+            return "send_reminder", 0.0, (
+                f"Invoice {case['entity_id']} for Rs {amount:,.0f} is {case['days_overdue']} "
+                "days overdue. Please use the payment link to settle it."
+            )
+        if kind == "checkout_abandoned":
+            return "send_recovery_link", 1.0, (
+                f"Your order of Rs {amount:,.0f} is still held. Complete the payment here."
+            )
+
+        # Bounded resources. Exhausting one avenue closes that avenue, not the case:
+        # a customer who has had three messages may still have a retry left, and
+        # closing the case there writes off collectable revenue.
+        can_contact = (
+            case["contacts_remaining"] > 0
+            and not cust.get("contact_opt_out")
+            and sem.contacts_customer
+        )
+        can_retry = case["retries_remaining"] > 0 and not sem.retry_is_futile
+
+        # --- hard stops: nothing below should run for these ---------------------
+        if family == "already_settled":
+            return "suppress_case", 0.0, None
+        if family == "risk_flagged":
+            return "escalate_to_merchant_ops", 0.0, None
+        if family == "integration_bug":
+            return "open_engineering_ticket", 0.0, None
+
+        # --- merchant-side faults: alert once, then probe ------------------------
+        alerted = any(h["action"] == "escalate_to_merchant_ops" and h["outcome"] == "success"
+                      for h in ctx["history"])
+        if family == "merchant_config" and not alerted:
+            # The customer cannot enable a disabled payment method. Contacting them
+            # would be an actively wrong action.
+            return "escalate_to_merchant_ops", 0.0, None
+
+        # --- recurring debits: two preconditions before a retry is even legal ----
+        if case["method"] == "emandate":
             if comp.get("mandate_amount_needs_customer_afa"):
                 return "send_mandate_reauth_link", 0.0, (
                     f"The auto-pay debit of Rs {amount:,.0f} needs your re-authorisation, "
@@ -178,45 +216,40 @@ class HeuristicReasoner:
                     f"Rs {amount:,.0f} after 24 hours. Please keep sufficient balance, "
                     "or use the link to pay now."
                 )
-        if kind == "invoice_overdue":
-            if case["days_overdue"] > 60 and amount >= 25_000:
-                return "escalate_to_collections", 0.0, None
-            return "send_reminder", 0.0, (
-                f"Invoice {case['entity_id']} for Rs {amount:,.0f} is {case['days_overdue']} "
-                "days overdue. Please use the payment link to settle it."
-            )
-        if kind == "checkout_abandoned":
-            return "send_recovery_link", 1.0, (
-                f"Your order of Rs {amount:,.0f} is still held. Complete the payment here."
-            )
-        if family == "already_settled":
-            return "suppress_case", 0.0, None
-        if family == "risk_flagged":
-            return "escalate_to_merchant_ops", 0.0, None
-        if family == "merchant_config":
-            return "escalate_to_merchant_ops", 0.0, None
-        if family == "integration_bug":
-            return "open_engineering_ticket", 0.0, None
-        if family == "instrument_dead":
+
+        age = case["age_hours"]
+
+        def backoff(hours: float) -> float:
+            """Remaining wait, measured from the failure rather than from now."""
+            return max(0.0, hours - age)
+
+        if family == "merchant_config" and can_retry:
+            return "retry_payment", backoff(24.0), None
+
+        # Instrument- and mandate-level failures are only ever fixed by the customer
+        # supplying something new, so a retry is not a fallback here -- it is a
+        # guaranteed-zero action, and `can_retry` is already False for both.
+        if family == "instrument_dead" and can_contact:
             return "send_instrument_update_link", 0.0, (
                 f"Your payment of Rs {amount:,.0f} could not be completed: "
                 f"{sem.description} Please add a different payment method."
             )
-        if family == "mandate_broken":
+        if family == "mandate_broken" and can_contact:
             return "send_mandate_reauth_link", 0.0, (
                 f"The auto-pay mandate for Rs {amount:,.0f} needs to be set up again. "
                 "Please re-authorise it using the link."
             )
-        if family == "customer_dropout":
+        if family == "customer_dropout" and can_contact:
             return "send_recovery_link", 0.0, (
                 f"Your payment of Rs {amount:,.0f} did not go through. "
                 "You can complete it using this link."
             )
         if family == "transient_infra":
-            if dt.get("state") == "active":
+            active = dt.get("state") == "active"
+            if active and can_retry:
                 from .downtime import MAX_CONSECUTIVE_HOLDS
 
-                if dt.get("consecutive_holds", 0) >= MAX_CONSECUTIVE_HOLDS:
+                if dt.get("consecutive_holds", 0) >= MAX_CONSECUTIVE_HOLDS and can_contact:
                     # The outage has outlasted our patience. Stop waiting on the
                     # broken rail and let the customer pay on a working one.
                     return "send_recovery_link", 0.0, (
@@ -224,10 +257,30 @@ class HeuristicReasoner:
                         "your bank is currently facing an outage. You can pay using a "
                         "different method here."
                     )
+                # A live outage is measured from now: it is happening now.
                 return "schedule_retry", float(dt.get("hold_hours", 2.0)), None
-            return "retry_payment", float(sem.min_backoff_hours or 2), None
-        # balance_dependent and limit_bound: wait for the precondition, then retry.
-        return "schedule_retry", float(sem.min_backoff_hours or 24), None
+            if can_retry:
+                return "retry_payment", backoff(float(sem.min_backoff_hours or 2)), None
+        # balance_dependent and limit_bound: the retry has to wait on a precondition
+        # the payer controls. Tell them first -- the message converts on warm intent
+        # while the retry waits, and the two draw on different budgets.
+        wait = backoff(float(sem.min_backoff_hours or 24))
+        if can_contact and case["contacts_sent"] == 0 and wait >= 6:
+            return "send_recovery_link", 0.0, (
+                f"Your payment of Rs {amount:,.0f} could not be completed: "
+                f"{sem.description} You can pay using this link whenever you are ready."
+            )
+        if can_retry:
+            return "schedule_retry", wait, None
+        if can_contact:
+            # Retries are spent, but the payer can still be handed a link to pay
+            # directly. This is the recovery a contact-budget-ends-the-case design
+            # throws away.
+            return "send_recovery_link", 0.0, (
+                f"Your payment of Rs {amount:,.0f} is still pending. "
+                "You can complete it using this link."
+            )
+        return "no_action", 0.0, None
 
     def _recoverability(self, family, kind, case, cust) -> float:
         base = {

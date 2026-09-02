@@ -18,6 +18,7 @@ from . import db, downtime
 from .compliance import AFA_FREE_LIMIT_PAISE, contact_window_ok, npci_debit_window_ok
 from .config import settings
 from .db import jload
+from .policy import POLICY
 from .quantify import quantify
 from .taxonomy import lookup
 
@@ -58,6 +59,10 @@ def build_context(conn: sqlite3.Connection, case: sqlite3.Row | dict, now: int) 
             "munshi_attempts": case["attempts"],
             "attempts_before_munshi": case["prior_attempts"],
             "contacts_sent": case["contacts_sent"],
+            # Bounded resources. An action whose budget is spent is not available,
+            # and proposing it wastes the tick.
+            "retries_remaining": max(0, POLICY["max_recovery_attempts"] - case["attempts"]),
+            "contacts_remaining": max(0, POLICY["max_customer_contacts"] - case["contacts_sent"]),
         },
         "failure": {
             "error_source": case.get("error_source"),

@@ -1,0 +1,1216 @@
+{
+  "generated_at": 1788354925,
+  "config": {
+    "arms": "baseline,agent-heuristic,agent-heuristic-approved",
+    "n": 320,
+    "seed": 20260824,
+    "days": 14,
+    "step_hours": 2,
+    "out": "evaluation"
+  },
+  "arms": {
+    "baseline": {
+      "money": {
+        "at_risk_paise": 1832035200,
+        "latently_recoverable_paise": 1523371000,
+        "recovered_paise": 812113900,
+        "recovery_rate_of_at_risk": 44.33,
+        "recovery_rate_of_recoverable": 53.31,
+        "held_for_approval_paise": 0,
+        "escalated_paise": 0,
+        "unrecovered_paise": 1019921300,
+        "annualised_mrr_at_risk_paise": 8002873200,
+        "annualised_mrr_protected_paise": 4208553600
+      },
+      "cases": {
+        "total": 320,
+        "recovered": 136,
+        "by_state": {
+          "recovered": 136,
+          "stopped": 184
+        },
+        "money_by_state": {
+          "recovered": 812113900,
+          "stopped": 1019921300
+        },
+        "all_terminal": true
+      },
+      "actions": {
+        "proposed": 4875,
+        "executed": 1048,
+        "allowed": 1048,
+        "blocked_by_policy": 3827,
+        "required_approval": 0,
+        "not_executed": 0,
+        "retries": 486,
+        "contacts": 562,
+        "by_type": {
+          "retry_payment": 486,
+          "send_reminder": 562
+        }
+      },
+      "quality": {
+        "wasted_retries": 201,
+        "wasted_retry_rate": 41.36,
+        "customers_chased_after_paying": 15,
+        "opted_out_customers_contacted": 18,
+        "intervention_accuracy": 66.56,
+        "intervention_scored": 320,
+        "diagnosis_accuracy": 0.0,
+        "diagnosis_scored": 320,
+        "actions_per_case": 3.27,
+        "contacts_per_recovered_case": 4.13
+      },
+      "compliance": {
+        "rbi_contact_window_violations": 193,
+        "npci_debit_window_violations": 26,
+        "customer_opt_out_violations": 19,
+        "total_violations": 238
+      },
+      "stopping": {
+        "by_reason": {
+          "recovered": 136,
+          "all_recovery_avenues_exhausted": 103,
+          "recovery_window_expired": 81
+        },
+        "cases_over_retry_cap": 0,
+        "cases_over_contact_cap": 0
+      },
+      "approvals": {
+        "requested": 0,
+        "pending": 0,
+        "value_paise": 0,
+        "items": []
+      },
+      "attribution": {
+        "recovered_by_action": {
+          "retry_payment": 645575800,
+          "send_reminder": 166538100
+        },
+        "recovered_by_failure_family": {
+          "transient_infra": 175289800,
+          "balance_dependent": 336383700,
+          "merchant_config": 130149800,
+          "limit_bound": 41164800,
+          "customer_dropout": 6365900,
+          "instrument_dead": 9047300,
+          "mandate_broken": 113712600
+        },
+        "recovered_by_segment": {
+          "consumer": 8765700,
+          "enterprise": 619904800,
+          "smb": 183443400
+        }
+      },
+      "run": {
+        "arm": "baseline",
+        "reasoner": "fixed_ladder",
+        "adapter": "simulator",
+        "run_id": "run_e65fe36c02",
+        "wall_seconds": 4.27,
+        "ticks": 168,
+        "deferred": 56,
+        "degraded_to_heuristic": 0,
+        "audit": {
+          "valid": true,
+          "checked": 15962,
+          "head": "93215761af707be3f524f958d3c8bbb464d435249c6bcca8029691fa1772a5cc"
+        },
+        "db": "/tmp/munshi_eval_baseline.db"
+      },
+      "batch": {
+        "n": 320,
+        "seed": 20260824,
+        "recovery_window_days": 14,
+        "tick_hours": 2,
+        "cases_with_failure_code": 224,
+        "structurally_unretryable_cases": 67,
+        "structurally_unretryable_share": 29.91,
+        "structurally_unretryable_paise": 506143600,
+        "share_of_failed_value": 35.94
+      }
+    },
+    "agent-heuristic": {
+      "money": {
+        "at_risk_paise": 1832035200,
+        "latently_recoverable_paise": 1523371000,
+        "recovered_paise": 444069800,
+        "recovery_rate_of_at_risk": 24.24,
+        "recovery_rate_of_recoverable": 29.15,
+        "held_for_approval_paise": 441597200,
+        "escalated_paise": 47413900,
+        "unrecovered_paise": 1387965400,
+        "annualised_mrr_at_risk_paise": 8002873200,
+        "annualised_mrr_protected_paise": 1890812400
+      },
+      "cases": {
+        "total": 320,
+        "recovered": 118,
+        "by_state": {
+          "recovered": 118,
+          "stopped": 168,
+          "awaiting_approval": 18,
+          "suppressed": 5,
+          "escalated": 11
+        },
+        "money_by_state": {
+          "recovered": 444069800,
+          "stopped": 890588000,
+          "awaiting_approval": 441597200,
+          "suppressed": 8366300,
+          "escalated": 47413900
+        },
+        "all_terminal": true
+      },
+      "actions": {
+        "proposed": 4456,
+        "executed": 863,
+        "allowed": 863,
+        "blocked_by_policy": 3575,
+        "required_approval": 18,
+        "not_executed": 0,
+        "retries": 245,
+        "contacts": 529,
+        "by_type": {
+          "schedule_retry": 185,
+          "send_mandate_reauth_link": 78,
+          "send_reminder": 126,
+          "send_recovery_link": 243,
+          "escalate_to_merchant_ops": 15,
+          "send_instrument_update_link": 82,
+          "suppress_case": 5,
+          "retry_payment": 60,
+          "open_engineering_ticket": 1,
+          "no_action": 68
+        }
+      },
+      "quality": {
+        "wasted_retries": 0,
+        "wasted_retry_rate": 0.0,
+        "customers_chased_after_paying": 0,
+        "opted_out_customers_contacted": 0,
+        "intervention_accuracy": 87.19,
+        "intervention_scored": 320,
+        "diagnosis_accuracy": 89.38,
+        "diagnosis_scored": 320,
+        "actions_per_case": 2.7,
+        "contacts_per_recovered_case": 4.48
+      },
+      "compliance": {
+        "rbi_contact_window_violations": 0,
+        "npci_debit_window_violations": 0,
+        "customer_opt_out_violations": 0,
+        "total_violations": 0
+      },
+      "stopping": {
+        "by_reason": {
+          "recovered": 118,
+          "all_recovery_avenues_exhausted": 78,
+          "recovery_window_expired": 87,
+          "customer_opted_out": 3,
+          "suppress_case_completed": 5,
+          "open_engineering_ticket_completed": 1,
+          "escalate_to_merchant_ops_completed": 9,
+          "not_a_customer_resolvable_failure": 1
+        },
+        "cases_over_retry_cap": 0,
+        "cases_over_contact_cap": 0
+      },
+      "approvals": {
+        "requested": 18,
+        "pending": 18,
+        "value_paise": 441597200,
+        "items": [
+          {
+            "action_id": "act_d84abb4c534c",
+            "case_id": "case_0214",
+            "action": "escalate_to_collections",
+            "amount_paise": 115124100,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_b6b590341db6",
+            "case_id": "case_0019",
+            "action": "retry_payment",
+            "amount_paise": 46850900,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_8f032bd734ca",
+            "case_id": "case_0029",
+            "action": "escalate_to_collections",
+            "amount_paise": 8958400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_2406b10747c4",
+            "case_id": "case_0263",
+            "action": "retry_payment",
+            "amount_paise": 8228400,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_dc7b4ca6feb3",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_c5a46107ce07",
+            "case_id": "case_0226",
+            "action": "retry_payment",
+            "amount_paise": 6668700,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_ebc7b11e4130",
+            "case_id": "case_0260",
+            "action": "retry_payment",
+            "amount_paise": 5857700,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_aba37284ea10",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_e66152ded0bc",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_909e3e46d427",
+            "case_id": "case_0066",
+            "action": "escalate_to_collections",
+            "amount_paise": 4117000,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_cfe3fbc96467",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_5fb0d875cfff",
+            "case_id": "case_0293",
+            "action": "escalate_to_collections",
+            "amount_paise": 3036200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_19015e25f758",
+            "case_id": "case_0171",
+            "action": "escalate_to_collections",
+            "amount_paise": 2568500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_4df48a007ec1",
+            "case_id": "case_0188",
+            "action": "retry_payment",
+            "amount_paise": 7176600,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_b6526491e3d3",
+            "case_id": "case_0204",
+            "action": "retry_payment",
+            "amount_paise": 68726200,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_66b800ebba81",
+            "case_id": "case_0003",
+            "action": "retry_payment",
+            "amount_paise": 12183800,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_2c08e8c5a11e",
+            "case_id": "case_0285",
+            "action": "retry_payment",
+            "amount_paise": 91001900,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": null
+          },
+          {
+            "action_id": "act_aca8d4bce97b",
+            "case_id": "case_0315",
+            "action": "retry_payment",
+            "amount_paise": 39048100,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": null
+          }
+        ]
+      },
+      "attribution": {
+        "recovered_by_action": {
+          "retry_payment": 4675700,
+          "schedule_retry": 244920800,
+          "send_instrument_update_link": 9377100,
+          "send_mandate_reauth_link": 131299800,
+          "send_recovery_link": 33911500,
+          "send_reminder": 19884900
+        },
+        "recovered_by_failure_family": {
+          "transient_infra": 6595000,
+          "balance_dependent": 270171700,
+          "mandate_broken": 120427500,
+          "merchant_config": 219800,
+          "instrument_dead": 9377100,
+          "limit_bound": 7201600,
+          "customer_dropout": 30077100
+        },
+        "recovered_by_segment": {
+          "consumer": 9035700,
+          "enterprise": 323000800,
+          "smb": 112033300
+        }
+      },
+      "run": {
+        "arm": "agent-heuristic",
+        "reasoner": "heuristic",
+        "adapter": "simulator",
+        "run_id": "run_5b09168721",
+        "wall_seconds": 4.26,
+        "ticks": 168,
+        "deferred": 121,
+        "degraded_to_heuristic": 0,
+        "audit": {
+          "valid": true,
+          "checked": 14696,
+          "head": "60efef7025d716dff330cc24066d07a55ff2980501e41f8821e4eaccd9fc75af"
+        },
+        "db": "/tmp/munshi_eval_agent-heuristic.db"
+      },
+      "batch": {
+        "n": 320,
+        "seed": 20260824,
+        "recovery_window_days": 14,
+        "tick_hours": 2,
+        "cases_with_failure_code": 224,
+        "structurally_unretryable_cases": 67,
+        "structurally_unretryable_share": 29.91,
+        "structurally_unretryable_paise": 506143600,
+        "share_of_failed_value": 35.94
+      }
+    },
+    "agent-heuristic-approved": {
+      "money": {
+        "at_risk_paise": 1832035200,
+        "latently_recoverable_paise": 1523371000,
+        "recovered_paise": 745456000,
+        "recovery_rate_of_at_risk": 40.69,
+        "recovery_rate_of_recoverable": 48.93,
+        "held_for_approval_paise": 0,
+        "escalated_paise": 47413900,
+        "unrecovered_paise": 1086579200,
+        "annualised_mrr_at_risk_paise": 8002873200,
+        "annualised_mrr_protected_paise": 3186484800
+      },
+      "cases": {
+        "total": 320,
+        "recovered": 130,
+        "by_state": {
+          "recovered": 130,
+          "stopped": 174,
+          "suppressed": 5,
+          "escalated": 11
+        },
+        "money_by_state": {
+          "recovered": 745456000,
+          "stopped": 1030799000,
+          "suppressed": 8366300,
+          "escalated": 47413900
+        },
+        "all_terminal": true
+      },
+      "actions": {
+        "proposed": 4658,
+        "executed": 944,
+        "allowed": 944,
+        "blocked_by_policy": 3714,
+        "required_approval": 0,
+        "not_executed": 0,
+        "retries": 255,
+        "contacts": 600,
+        "by_type": {
+          "schedule_retry": 185,
+          "escalate_to_collections": 71,
+          "send_mandate_reauth_link": 78,
+          "send_reminder": 126,
+          "send_recovery_link": 243,
+          "escalate_to_merchant_ops": 15,
+          "retry_payment": 70,
+          "send_instrument_update_link": 82,
+          "suppress_case": 5,
+          "open_engineering_ticket": 1,
+          "no_action": 68
+        }
+      },
+      "quality": {
+        "wasted_retries": 0,
+        "wasted_retry_rate": 0.0,
+        "customers_chased_after_paying": 0,
+        "opted_out_customers_contacted": 0,
+        "intervention_accuracy": 87.19,
+        "intervention_scored": 320,
+        "diagnosis_accuracy": 89.38,
+        "diagnosis_scored": 320,
+        "actions_per_case": 2.95,
+        "contacts_per_recovered_case": 4.62
+      },
+      "compliance": {
+        "rbi_contact_window_violations": 0,
+        "npci_debit_window_violations": 0,
+        "customer_opt_out_violations": 0,
+        "total_violations": 0
+      },
+      "stopping": {
+        "by_reason": {
+          "recovered": 130,
+          "all_recovery_avenues_exhausted": 78,
+          "recovery_window_expired": 93,
+          "customer_opted_out": 3,
+          "suppress_case_completed": 5,
+          "open_engineering_ticket_completed": 1,
+          "escalate_to_merchant_ops_completed": 9,
+          "not_a_customer_resolvable_failure": 1
+        },
+        "cases_over_retry_cap": 0,
+        "cases_over_contact_cap": 0
+      },
+      "approvals": {
+        "requested": 81,
+        "pending": 0,
+        "value_paise": 1469153800,
+        "items": [
+          {
+            "action_id": "act_4e35a90bffaf",
+            "case_id": "case_0214",
+            "action": "escalate_to_collections",
+            "amount_paise": 115124100,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_45f3d55cef01",
+            "case_id": "case_0019",
+            "action": "retry_payment",
+            "amount_paise": 46850900,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_6871c0014ec3",
+            "case_id": "case_0029",
+            "action": "escalate_to_collections",
+            "amount_paise": 8958400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_6d9ea23e8905",
+            "case_id": "case_0263",
+            "action": "retry_payment",
+            "amount_paise": 8228400,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_e06886cf8bc6",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_42b881c1e8fa",
+            "case_id": "case_0226",
+            "action": "retry_payment",
+            "amount_paise": 6668700,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_768c2124a031",
+            "case_id": "case_0260",
+            "action": "retry_payment",
+            "amount_paise": 5857700,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_5b0fd69e69a7",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_1e1efd16fb64",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_4c26495e2bab",
+            "case_id": "case_0066",
+            "action": "escalate_to_collections",
+            "amount_paise": 4117000,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_0e525434e754",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_817dcfdc5d36",
+            "case_id": "case_0293",
+            "action": "escalate_to_collections",
+            "amount_paise": 3036200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_ea8d20c9fe84",
+            "case_id": "case_0171",
+            "action": "escalate_to_collections",
+            "amount_paise": 2568500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_bf57487db23c",
+            "case_id": "case_0188",
+            "action": "retry_payment",
+            "amount_paise": 7176600,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_e85776f00965",
+            "case_id": "case_0204",
+            "action": "retry_payment",
+            "amount_paise": 68726200,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_a1c7c0dfba14",
+            "case_id": "case_0003",
+            "action": "retry_payment",
+            "amount_paise": 12183800,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_a880707ce9a8",
+            "case_id": "case_0214",
+            "action": "escalate_to_collections",
+            "amount_paise": 115124100,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_a7e68274db93",
+            "case_id": "case_0285",
+            "action": "retry_payment",
+            "amount_paise": 91001900,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_da722e347298",
+            "case_id": "case_0315",
+            "action": "retry_payment",
+            "amount_paise": 39048100,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_5c5e086a3731",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_6f4cd7dc4224",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_4619cfe7060f",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_a62c0232afbf",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_71df2923b918",
+            "case_id": "case_0293",
+            "action": "escalate_to_collections",
+            "amount_paise": 3036200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_a25e6d18032b",
+            "case_id": "case_0315",
+            "action": "retry_payment",
+            "amount_paise": 39048100,
+            "reason": "retry_payment is tier L2 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_d4ede251b433",
+            "case_id": "case_0214",
+            "action": "escalate_to_collections",
+            "amount_paise": 115124100,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_f0571648dd91",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_98377bcfecca",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_4ce8004bde9f",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_37d7b4a5c0b3",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_685c461ed460",
+            "case_id": "case_0293",
+            "action": "escalate_to_collections",
+            "amount_paise": 3036200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_5ba8c9f7e6ed",
+            "case_id": "case_0214",
+            "action": "escalate_to_collections",
+            "amount_paise": 115124100,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_c9bf04001239",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_8f1a60aa0c0f",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_fcaa6a04360d",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_6d181b40fde3",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_1b598d4ae707",
+            "case_id": "case_0293",
+            "action": "escalate_to_collections",
+            "amount_paise": 3036200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_07241d71ba08",
+            "case_id": "case_0214",
+            "action": "escalate_to_collections",
+            "amount_paise": 115124100,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_949e15bce5e3",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_7e692861c89c",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_95a8cdc1d25d",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_b25629aa48e4",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_1673ca0bd25a",
+            "case_id": "case_0293",
+            "action": "escalate_to_collections",
+            "amount_paise": 3036200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_f850c068d96f",
+            "case_id": "case_0214",
+            "action": "escalate_to_collections",
+            "amount_paise": 115124100,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_df76dae6d9eb",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_c79f3aef5b3e",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_79f9e9635d68",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_25889e6591cc",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_17332c4c4e42",
+            "case_id": "case_0293",
+            "action": "escalate_to_collections",
+            "amount_paise": 3036200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_e5b774875744",
+            "case_id": "case_0214",
+            "action": "escalate_to_collections",
+            "amount_paise": 115124100,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_b84c0ecbf831",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_0bd800f840fb",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_af989eca50d7",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_93ee2ff28143",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_e180f337f350",
+            "case_id": "case_0293",
+            "action": "escalate_to_collections",
+            "amount_paise": 3036200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_3b774dbe3af2",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_5038e8b3d3a6",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_484d2dabc286",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_f4e52ab4b543",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_96784e7958d4",
+            "case_id": "case_0293",
+            "action": "escalate_to_collections",
+            "amount_paise": 3036200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_eb27f0b402c6",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_30bd1d49842a",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_20049a77e277",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_bfbed3cc6a34",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_734d20b0948f",
+            "case_id": "case_0293",
+            "action": "escalate_to_collections",
+            "amount_paise": 3036200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_9c1d011a64fb",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_c30abf5af4ff",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_24fd8cdc1ea4",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_dc74b5d7c5cb",
+            "case_id": "case_0176",
+            "action": "escalate_to_collections",
+            "amount_paise": 3296200,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_280bc3b847b4",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_df838d2e0c5d",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_ea278a082a2e",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_5d421aac91d6",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_e71cfa5562e9",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_8568031bea66",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_6278d43c1f60",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_e40d2180b303",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_1f8a95748504",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_610057763989",
+            "case_id": "case_0259",
+            "action": "escalate_to_collections",
+            "amount_paise": 7837400,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_0d68001447a3",
+            "case_id": "case_0014",
+            "action": "escalate_to_collections",
+            "amount_paise": 5470500,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          },
+          {
+            "action_id": "act_c2bbaa64b65b",
+            "case_id": "case_0216",
+            "action": "escalate_to_collections",
+            "amount_paise": 5446600,
+            "reason": "escalate_to_collections is tier L3 and requires merchant sign-off",
+            "decision": "approved"
+          }
+        ]
+      },
+      "attribution": {
+        "recovered_by_action": {
+          "escalate_to_collections": 15643900,
+          "retry_payment": 290418000,
+          "schedule_retry": 244920800,
+          "send_instrument_update_link": 9377100,
+          "send_mandate_reauth_link": 131299800,
+          "send_recovery_link": 33911500,
+          "send_reminder": 19884900
+        },
+        "recovered_by_failure_family": {
+          "transient_infra": 162287300,
+          "balance_dependent": 285815600,
+          "mandate_broken": 120427500,
+          "merchant_config": 130269800,
+          "instrument_dead": 9377100,
+          "limit_bound": 7201600,
+          "customer_dropout": 30077100
+        },
+        "recovered_by_segment": {
+          "consumer": 9035700,
+          "enterprise": 580811700,
+          "smb": 155608600
+        }
+      },
+      "run": {
+        "arm": "agent-heuristic-approved",
+        "reasoner": "heuristic",
+        "adapter": "simulator",
+        "run_id": "run_85b915beb6",
+        "wall_seconds": 4.32,
+        "ticks": 168,
+        "deferred": 121,
+        "degraded_to_heuristic": 0,
+        "audit": {
+          "valid": true,
+          "checked": 15491,
+          "head": "a93c7958c61991665f91bad28e993edf01c7a9774ad1ac2e9bac8d2ddf82a536"
+        },
+        "db": "/tmp/munshi_eval_agent-heuristic-approved.db"
+      },
+      "batch": {
+        "n": 320,
+        "seed": 20260824,
+        "recovery_window_days": 14,
+        "tick_hours": 2,
+        "cases_with_failure_code": 224,
+        "structurally_unretryable_cases": 67,
+        "structurally_unretryable_share": 29.91,
+        "structurally_unretryable_paise": 506143600,
+        "share_of_failed_value": 35.94
+      }
+    }
+  }
+}
