@@ -148,9 +148,11 @@ The model earns its place on three things, all of which are judgement over
 heterogeneous evidence rather than lookup:
 
 1. **Disambiguating opaque failures.** Razorpay documents `payment_failed` as
-   *"no specific error code received from gateway"*. Whether a particular
-   ₹84,000 decline is an outage, a balance problem or a dying card is a weighing
-   of downtime state, customer history, amount and timing.
+   *"no specific error code received from gateway"*. Whether `case_0003`'s
+   ₹1,21,838 decline is an outage, a balance problem or a dying card is a
+   weighing of downtime state, customer history, amount and timing. (In the
+   committed run it was an outage on the payer's `@ybl` UPI handle, and the
+   agent held three times before it cleared.)
 2. **Choosing between defensible interventions and their timing.** "Retry at
    20:00 because this payer has settled at 20:00 eleven times" versus "send an
    instrument-update link now" is a trade-off across signals that do not reduce

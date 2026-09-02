@@ -103,7 +103,7 @@ our favour.
 | Recovery rate, of recoverable | 53.31% | 20.17% | 48.93% |
 | Cases recovered | 136 / 320 | 121 / 320 | 130 / 320 |
 | Held for merchant approval | ₹0 | ₹78,02,678 | ₹0 |
-| Annualised MRR protected | ₹42,08,554 | ₹21,55,697 | ₹31,86,485 |
+| Annualised MRR protected | ₹4,20,85,536 | ₹2,15,56,968 | ₹3,18,64,848 |
 
 ### What the extra gross revenue cost
 
@@ -154,7 +154,7 @@ our favour.
 ## Reading the headline honestly
 
 The fixed ladder recovers **₹6.66 lakh more gross revenue** than Munshi with
-approvals — about 9%. That is the honest result and it is not tuned away.
+approvals — 8.2%. That is the honest result and it is not tuned away.
 
 It buys those rupees with 201 retries that could never have succeeded, 15
 messages to customers who had already paid, 18 to people who had opted out, and

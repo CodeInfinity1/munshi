@@ -64,7 +64,7 @@ identical cases with identical hidden ground truth and identical per-case seeds:
 | RBI / NPCI window violations | **238** | **0** |
 | Intervention accuracy | 66.6% | **87.2%** |
 
-The ladder wins on gross revenue by about 9%, and that is reported rather than
+The ladder wins on gross revenue by about 8%, and that is reported rather than
 tuned away. It buys those rupees with 201 impossible retries, 15 messages to
 people who had already paid, and 238 regulatory breaches. Munshi collects 92% of
 the gross with half the retries and none of that — and puts ₹78L in front of the
