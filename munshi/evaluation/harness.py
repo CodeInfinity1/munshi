@@ -41,7 +41,7 @@ def run_arm(arm: str, n: int, seed: int, days: int, step_hours: int,
             db_path: str | None = None) -> dict:
     from ..orchestrator import Orchestrator
 
-    path = db_path or f"/tmp/munshi_eval_{arm}.db"
+    path = db_path or f"/tmp/munshi_eval_{arm}_n{n}_s{seed}.db"
     conn = db.reset(path)
     load(conn, n=n, seed=seed)
 
