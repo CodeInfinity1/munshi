@@ -75,13 +75,16 @@ caused it. Every decision is in an append-only, sha256-chained audit trail.
 
 ## 3 · GitHub repository
 
-`VIDEO_AND_REPO_URL_PLACEHOLDER` → replaced with the live URL at push time; see
-the note at the end of this document.
+**https://github.com/CodeInfinity1/munshi** — public.
 
 ## 4 · Five-minute pitch video
 
-**`VIDEO_LINK_PLACEHOLDER`** — paste the unlisted YouTube link here, and in the
-submission form.
+**`VIDEO_LINK_PLACEHOLDER`**
+
+> ⚠️ **This is the one field still to fill in.** Record the run using
+> [demo-script.md](demo-script.md), upload to YouTube as **Unlisted**, then
+> replace the placeholder above *and* paste the same link into the submission
+> form. Nothing else in this repository is a placeholder.
 
 Script: [demo-script.md](demo-script.md).
 
