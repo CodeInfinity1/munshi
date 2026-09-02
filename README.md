@@ -229,6 +229,16 @@ Being precise about this is the point of the project.
 The dashboard states the active reasoner and adapter, and whether money movement
 is simulated, in the header — next to the button that produces it.
 
+**One thing that has not been executed here.** No Anthropic credential was
+available in the environment this was built in, so the `agent-llm` arm has never
+been run against the live API. What *is* verified: the request shape (model,
+`output_config.format` with the closed schema, effort, cache breakpoint, and a
+serialisable context pack) is asserted by a test that captures the outgoing call
+without sending it; the schema meets the API's `json_schema` contract; and the
+response validator is tested against valid, malformed, out-of-vocabulary and
+out-of-range payloads. **Every number in this repository comes from the
+deterministic arm** — the weaker claim, deliberately.
+
 ## Measuring recovery honestly
 
 Three properties make the numbers worth reading:

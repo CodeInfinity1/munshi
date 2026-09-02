@@ -1,5 +1,7 @@
 """The model is treated as an untrusted input, and adapters must not fake work."""
 
+import json
+
 import pytest
 
 from munshi.adapters.base import UnsupportedInTestMode
@@ -139,3 +141,53 @@ def test_simulator_will_not_invent_an_outcome_without_ground_truth(conn):
 
 def test_unsupported_action_is_raised_not_faked():
     assert issubclass(UnsupportedInTestMode, RuntimeError)
+
+
+def test_decision_schema_meets_the_api_contract():
+    """A json_schema output format requires additionalProperties:false and every
+    property listed in `required`. Getting this wrong is a 400 at runtime, in an
+    arm that only runs when someone supplies a key."""
+    props = set(DECISION_SCHEMA["properties"])
+    assert props == set(DECISION_SCHEMA["required"]), props ^ set(DECISION_SCHEMA["required"])
+    assert DECISION_SCHEMA["additionalProperties"] is False
+    assert DECISION_SCHEMA["type"] == "object"
+    json.dumps(DECISION_SCHEMA)
+
+
+def test_llm_request_is_well_formed_without_sending_it(monkeypatch):
+    """Capture the request the reasoner would send. This is as far as it is
+    possible to verify the live path without a credential -- stated as such in
+    the README rather than implied to be tested end to end."""
+    from munshi.config import Settings, settings
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-not-a-real-key")
+    settings.cache_clear()
+    try:
+        assert Settings().llm_available
+        r = LLMReasoner()
+        captured = {}
+
+        class _Messages:
+            def create(self, **kw):
+                captured.update(kw)
+                raise RuntimeError("not sent")
+
+        r._client = type("C", (), {"messages": _Messages()})()
+        r.decide(ctx(_conn_for_request_test()))
+    finally:
+        settings.cache_clear()
+
+    assert captured["model"]
+    assert captured["output_config"]["format"]["type"] == "json_schema"
+    assert captured["output_config"]["format"]["schema"] is DECISION_SCHEMA
+    assert captured["output_config"]["effort"] in ("low", "medium", "high", "xhigh", "max")
+    assert captured["system"][0]["cache_control"] == {"type": "ephemeral"}
+    assert captured["messages"][0]["role"] == "user"
+    json.loads(captured["messages"][0]["content"])  # the context pack serialises
+
+
+def _conn_for_request_test():
+    from munshi import db
+
+    c = db.reset("/tmp/munshi_req_test.db")
+    return c

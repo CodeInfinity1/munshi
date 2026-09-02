@@ -183,7 +183,11 @@ Stated because they are the first things a reviewer should ask.
 4. **Intervention accuracy is scored against a mapping we defined**
    (`CORRECT_INTERVENTION` in `metrics.py`). It is stated in the source and
    follows from each family's resolution condition, but it is our mapping.
-5. **The compliance comparison is not apples-to-apples on purpose.** The ladder
+5. **The `agent-llm` arm has never been run.** No Anthropic credential was
+   available in the build environment. The request shape and the response
+   validator are tested, but no figure in this repository comes from a live model
+   call — every committed number is from the deterministic arm.
+6. **The compliance comparison is not apples-to-apples on purpose.** The ladder
    is run without the envelope because that is how naive dunning behaves. A
    merchant who already enforces contact windows would see the violation columns
    go to zero on both sides, and the retry and false-positive columns unchanged.
