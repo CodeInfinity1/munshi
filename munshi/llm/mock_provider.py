@@ -149,9 +149,17 @@ def _decision(brief: dict, messages: list[dict]) -> dict:
                 verdict = json.loads(m.get("content") or "{}")
             except json.JSONDecodeError:
                 verdict = {}
-            permanent = (verdict.get("decision") == "deny"
-                         and verdict.get("would_reschedule_to_hours") is None)
-            if permanent:
+            failed = {r.get("rule") for r in (verdict.get("failed_rules") or [])}
+            # Read the failing rule and take the action that unblocks it, which is
+            # the entire reason check_policy exists.
+            if "emandate_pre_debit_notice" in failed:
+                action = "send_reminder"
+            elif "retry_can_succeed" in failed:
+                action = _ACTION_BY_FAMILY.get(_family(brief), "no_action")
+                if action == "retry_payment":
+                    action = "no_action"
+            elif (verdict.get("decision") == "deny"
+                  and verdict.get("would_reschedule_to_hours") is None):
                 action = "no_action"
             break
     contacts = "link" in action or "reminder" in action

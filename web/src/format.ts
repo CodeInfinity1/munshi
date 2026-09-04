@@ -47,6 +47,7 @@ export const STATE_LABEL: Record<string, string> = {
   stopped: "Stopped",
   escalated: "Escalated",
   suppressed: "Suppressed",
+  settled_externally: "Paid elsewhere",
 };
 
 /** Each money state owns a hue so the allocation bar is readable at a glance. */
@@ -58,4 +59,5 @@ export const STATE_TOKEN: Record<string, string> = {
   suppressed: "suppressed",
   open: "at-risk",
   scheduled: "at-risk",
+  settled_externally: "external",
 };

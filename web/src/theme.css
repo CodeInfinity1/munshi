@@ -86,6 +86,12 @@
   --suppressed-ink: oklch(0.525 0.010 240);
   --suppressed-soft: oklch(0.968 0.003 240);
 
+  /* The customer paid through another channel. Real money, but not ours -- a
+     distinct hue so it can never be read as recovery on the allocation bar. */
+  --external: oklch(0.685 0.098 196);
+  --external-ink: oklch(0.475 0.092 196);
+  --external-soft: oklch(0.958 0.024 196);
+
   --shadow-panel: 0 1px 2px oklch(0.235 0.014 245 / 0.05),
     0 1px 1px oklch(0.235 0.014 245 / 0.03);
   --shadow-drawer: -8px 0 32px oklch(0.235 0.014 245 / 0.08);
@@ -132,6 +138,10 @@
   --suppressed: oklch(0.455 0.010 240);
   --suppressed-ink: oklch(0.655 0.010 240);
   --suppressed-soft: oklch(0.258 0.006 240);
+
+  --external: oklch(0.735 0.092 196);
+  --external-ink: oklch(0.805 0.086 196);
+  --external-soft: oklch(0.288 0.038 196);
 
   --shadow-panel: 0 1px 2px oklch(0 0 0 / 0.28);
   --shadow-drawer: -8px 0 32px oklch(0 0 0 / 0.42);

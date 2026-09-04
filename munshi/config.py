@@ -42,6 +42,11 @@ class Settings:
     groq_model: str = field(default_factory=lambda: _env("GROQ_MODEL", "openai/gpt-oss-120b"))
     groq_reasoning_effort: str | None = field(
         default_factory=lambda: _env("GROQ_REASONING_EFFORT", "medium"))
+    #: auto (groq when a key is present, else the deterministic reasoner)
+    #: | heuristic (never call a model)
+    #: | mock-agent (run the real tool loop against the deterministic stand-in,
+    #:   so the agent's behaviour can be demonstrated with no credential)
+    reasoner_mode: str = field(default_factory=lambda: _env("MUNSHI_REASONER", "auto"))
     llm_timeout_seconds: float = field(
         default_factory=lambda: float(_env("MUNSHI_LLM_TIMEOUT", "45")))
     llm_concurrency: int = field(default_factory=lambda: _int("MUNSHI_LLM_CONCURRENCY", 8))
@@ -71,15 +76,26 @@ class Settings:
         return "groq" if self.groq_api_key else "mock"
 
     @property
+    def effective_reasoner(self) -> str:
+        """What will actually run: agent-groq | agent-mock | heuristic."""
+        if self.reasoner_mode == "heuristic":
+            return "heuristic"
+        if self.reasoner_mode == "mock-agent":
+            return "agent-mock"
+        return "agent-groq" if self.groq_api_key else "heuristic"
+
+    @property
     def razorpay_credentials_present(self) -> bool:
         return bool(self.razorpay_key_id and self.razorpay_key_secret)
 
     def describe(self) -> dict[str, object]:
         """Non-secret summary surfaced in the UI so the demo can never overclaim."""
+        eff = self.effective_reasoner
         return {
-            "reasoner": "agent" if self.llm_available else "heuristic",
-            "llm_provider": self.llm_provider if self.llm_available else None,
-            "llm_model": self.groq_model if self.llm_available else None,
+            "reasoner": eff,
+            "llm_provider": {"agent-groq": "groq", "agent-mock": "mock"}.get(eff),
+            "llm_model": self.groq_model if eff == "agent-groq" else (
+                "mock-deterministic" if eff == "agent-mock" else None),
             "adapter": self.effective_adapter,
             "razorpay_credentials_present": self.razorpay_credentials_present,
             "agent_max_turns": self.agent_max_turns,

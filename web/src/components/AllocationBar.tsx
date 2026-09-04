@@ -9,8 +9,8 @@ import { STATE_LABEL, STATE_TOKEN } from "../format";
  *  stop touching. Every segment is a live SUM over case state, so during a run
  *  it moves because the state moved, not because something is animating. */
 
-const ORDER = ["recovered", "awaiting_approval", "escalated", "stopped", "suppressed",
-               "scheduled", "open"];
+const ORDER = ["recovered", "settled_externally", "awaiting_approval", "escalated",
+               "stopped", "suppressed", "scheduled", "open"];
 
 export function AllocationBar({
   moneyByState, countByState, total,

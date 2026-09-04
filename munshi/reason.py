@@ -357,9 +357,16 @@ def _clamp(v, lo, hi) -> float:
 
 
 def build_reasoner(force: str | None = None):
-    """`force` is 'heuristic' or 'agent'; the evaluation harness uses it to pin an arm."""
-    if force == "heuristic":
+    """`force` pins an arm: 'heuristic', 'agent' (Groq), or 'mock-agent'.
+
+    Unforced, this follows MUNSHI_REASONER. The default never presents a stand-in
+    as a model: with no credential it runs the deterministic reasoner and says so.
+    """
+    mode = force or settings().effective_reasoner
+    if mode in ("heuristic",):
         return HeuristicReasoner()
-    if force == "agent" or settings().llm_available:
-        return AgentReasoner()
-    return HeuristicReasoner()
+    if mode in ("agent-mock", "mock-agent"):
+        from .llm.mock_provider import MockProvider
+
+        return AgentReasoner(provider=MockProvider())
+    return AgentReasoner()

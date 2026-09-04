@@ -3,7 +3,9 @@ import { api, type Approval, type Case, type Health, type Overview } from "../ap
 import { AllocationBar } from "../components/AllocationBar";
 import { ApprovalQueue } from "../components/ApprovalQueue";
 import { CaseDrawer } from "../components/CaseDrawer";
+import { ActivityStream } from "../components/ActivityStream";
 import { CaseTable } from "../components/CaseTable";
+import { PriorityQueue } from "../components/PriorityQueue";
 import { RunBar } from "../components/RunBar";
 import { Panel } from "../components/primitives";
 import { rupeesShort } from "../format";
@@ -14,7 +16,17 @@ const FILTERS = [
   { label: "Awaiting approval", state: "awaiting_approval" },
   { label: "Escalated", state: "escalated" },
   { label: "Stopped", state: "stopped" },
+  { label: "Paid elsewhere", state: "settled_externally" },
   { label: "Suppressed", state: "suppressed" },
+];
+
+type Pane = "activity" | "cases" | "priority";
+const PANES: { id: Pane; label: string; hint: string }[] = [
+  { id: "activity", label: "Agent activity",
+    hint: "Every decision: tools used, conclusion, policy verdict" },
+  { id: "cases", label: "Cases", hint: "The whole book" },
+  { id: "priority", label: "Priority queue",
+    hint: "Expected recoverable value, decomposed" },
 ];
 
 export function Desk({
@@ -26,6 +38,7 @@ export function Desk({
   const [filter, setFilter] = useState("");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [pane, setPane] = useState<Pane>("activity");
 
   const running = overview?.run_state.status === "running";
 
@@ -86,7 +99,7 @@ export function Desk({
                   sub={`of ${overview.actions.retries} retries spent`} tone="stopped" />
             <Stat label="Customers chased after paying"
                   value={String(overview.quality.customers_chased_after_paying)}
-                  sub={`${overview.quality.opted_out_customers_contacted} opted-out contacted`}
+                  sub={`${overview.quality.externally_settled_cases} paid elsewhere mid-recovery`}
                   tone="stopped" />
           </dl>
         )}
@@ -95,10 +108,27 @@ export function Desk({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Panel
           flush
-          title="Cases"
-          meta={`${cases.length} shown`}
+          title={
+            <div className="flex gap-0.5">
+              {PANES.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setPane(p.id)}
+                  title={p.hint}
+                  aria-pressed={pane === p.id}
+                  className={`rounded-[var(--radius-sm)] px-2 py-1
+                    text-[length:var(--text-xs)] font-semibold transition-colors duration-150
+                    ${pane === p.id
+                      ? "bg-[var(--brand-soft)] text-[var(--brand-ink)]"
+                      : "text-[var(--ink-3)] hover:bg-[var(--surface-2)]"}`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          }
           actions={
-            <div className="flex items-center gap-2">
+            pane === "cases" ? (
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -108,31 +138,39 @@ export function Desk({
                            text-[length:var(--text-xs)] text-[var(--ink)]
                            placeholder:text-[var(--ink-3)]"
               />
-            </div>
+            ) : undefined
           }
         >
-          <div className="flex flex-wrap gap-1 border-b px-3 py-2">
-            {FILTERS.map((f) => (
-              <button
-                key={f.label}
-                onClick={() => setFilter(f.state)}
-                aria-pressed={filter === f.state}
-                className={`rounded-[var(--radius-sm)] px-2 py-1 text-[length:var(--text-2xs)]
-                  font-medium transition-colors duration-150
-                  ${filter === f.state
-                    ? "bg-[var(--brand-soft)] text-[var(--brand-ink)]"
-                    : "text-[var(--ink-2)] hover:bg-[var(--surface-2)]"}`}
-              >
-                {f.label}
-                {f.state && counts[f.state] != null && (
-                  <span className="tnum ml-1 text-[var(--ink-3)]">{counts[f.state]}</span>
-                )}
-              </button>
-            ))}
-          </div>
-          <div className="max-h-[62vh] overflow-y-auto">
-            <CaseTable cases={cases} loading={loading && !running}
-                       selected={selected} onSelect={setSelected} />
+          {pane === "cases" && (
+            <div className="flex flex-wrap gap-1 border-b px-3 py-2">
+              {FILTERS.map((f) => (
+                <button
+                  key={f.label}
+                  onClick={() => setFilter(f.state)}
+                  aria-pressed={filter === f.state}
+                  className={`rounded-[var(--radius-sm)] px-2 py-1
+                    text-[length:var(--text-2xs)] font-medium transition-colors duration-150
+                    ${filter === f.state
+                      ? "bg-[var(--brand-soft)] text-[var(--brand-ink)]"
+                      : "text-[var(--ink-2)] hover:bg-[var(--surface-2)]"}`}
+                >
+                  {f.label}
+                  {f.state && counts[f.state] != null && (
+                    <span className="tnum ml-1 text-[var(--ink-3)]">{counts[f.state]}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="max-h-[64vh] overflow-y-auto">
+            {pane === "activity" && (
+              <ActivityStream running={running} onSelect={setSelected} />
+            )}
+            {pane === "cases" && (
+              <CaseTable cases={cases} loading={loading && !running}
+                         selected={selected} onSelect={setSelected} />
+            )}
+            {pane === "priority" && <PriorityQueue onSelect={setSelected} />}
           </div>
         </Panel>
 

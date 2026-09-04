@@ -75,8 +75,13 @@ export function RunBar({
         />
         <Claim
           label="Reasoner"
-          value={health?.reasoner === "llm" ? (health.llm_model ?? "llm") : "deterministic"}
-          tone={health?.reasoner === "llm" ? "held" : "stopped"}
+          value={
+            health?.reasoner === "agent-groq" ? `agent · ${health.llm_model}`
+              : health?.reasoner === "agent-mock" ? "agent · MOCK PROVIDER"
+              : "deterministic (no model)"
+          }
+          tone={health?.reasoner === "agent-groq" ? "held"
+                : health?.reasoner === "agent-mock" ? "at-risk" : "stopped"}
         />
         <Claim
           label="Audit chain"
