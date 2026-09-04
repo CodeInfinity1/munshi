@@ -319,9 +319,15 @@ docs/                architecture · agent design · policy · evaluation · sec
   rather than observed Razorpay data. It is stated in the source, and its bias
   runs against our own result.
 - **Rate limiting is in-process** and does not survive a restart or span replicas.
-- **`agent-groq` figures are not committed.** Every number above comes from the
-  deterministic arm, which is the weaker claim. See
-  [docs/evaluation.md](docs/evaluation.md) for what was and was not run here.
+- **No `agent-groq` figures are committed.** Every number above comes from the
+  deterministic arm — the weaker claim, deliberately. What *was* verified here:
+  the full tool loop runs end to end over all 320 cases with zero degradations
+  (the `agent-mock` arm), and the Groq client path reaches the live API — with an
+  invalid key it authenticates, is rejected, and all 31 decisions degrade to the
+  deterministic reasoner with the audit chain intact and the ledger untouched.
+  What was **not** possible without a valid key is a successful completion, so no
+  committed figure comes from a live model call. See
+  [docs/evaluation.md](docs/evaluation.md).
 
 ## License
 

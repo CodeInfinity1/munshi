@@ -197,14 +197,17 @@ Stated because they are the first things a reviewer should ask.
 4. **Intervention accuracy is scored against a mapping we defined**
    (`CORRECT_INTERVENTION` in `metrics.py`). It is stated in the source and
    follows from each family's resolution condition, but it is our mapping.
-5. **The `agent-groq` arm has not been run against the live API here.** No Groq
-   credential was available in the build environment. What *is* verified: the
-   full tool loop runs end to end (the `agent-mock` arm exercises it over all 320
-   cases with zero degradations), the provider's wire format and error
-   classification are tested against a stubbed client, and every adversarial path
-   — malformed arguments, invented tools, prose instead of a tool call, rate
-   limits, timeouts, an agent that never decides — is driven through the real
-   loop by scripted providers. No committed figure comes from a live model call.
+5. **No `agent-groq` figure is committed.** No valid Groq credential was
+   available in the build environment. Precisely what was and was not verified:
+
+   | | |
+   |---|---|
+   | The tool loop runs end to end over all 320 cases | **Yes** — the `agent-mock` arm, zero degradations, every decision a full 3-turn loop |
+   | The Groq client reaches the live API | **Yes** — with an invalid key it authenticates, is rejected, and the failure is classified `LLMUnavailable` |
+   | A model failure leaves financial state intact | **Yes** — 31/31 decisions degraded, audit chain valid, ledger written correctly by the fallback |
+   | Wire format, tool-call parsing, error classification | **Yes** — against a stubbed client |
+   | Every adversarial path (malformed args, invented tools, prose instead of a tool call, rate limits, timeouts, an agent that never decides) | **Yes** — driven through the real loop by scripted providers |
+   | A **successful** Groq completion | **No.** This needs a valid key. |
 6. **Reason weights are ours.** The structurally-unretryable share is computed
    from the generator's own weight table, so it is a property of the simulated
    population rather than of Razorpay's real traffic. The population parameter
