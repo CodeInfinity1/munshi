@@ -62,10 +62,14 @@ class MockProvider:
 
     def chat(self, messages, tools=None, *, tool_choice="auto", max_tokens=2048,
              temperature=0.0) -> LLMTurn:
-        turn_index = self.calls
+        # Derived from the conversation, not from instance state. One provider is
+        # shared across concurrently-decided cases, so a counter on `self` would
+        # interleave their turn indices and give later cases a truncated loop.
+        turn_index = sum(1 for m in messages if m.get("role") == "assistant")
         self.calls += 1
 
         if self._script is not None:
+            turn_index = self.calls - 1  # scripted runs are single-conversation by design
             if turn_index >= len(self._script):
                 return _turn(text="no further scripted turns")
             return self._script[turn_index](messages)
@@ -136,15 +140,18 @@ def _delay_for(brief: dict) -> float:
 def _decision(brief: dict, messages: list[dict]) -> dict:
     family = _family(brief)
     action = _action_for(brief)
-    # If the policy dry-run came back refused, fall back to observing rather than
-    # submitting something the engine has already said it will reject.
+    # A dry-run refusal only means give up when it is permanent. A deny carrying
+    # `would_reschedule_to_hours` means "not yet", and abandoning the case there
+    # writes off revenue that was only waiting on a cooldown or a contact window.
     for m in reversed(messages):
         if m.get("role") == "tool" and "check_policy" in (m.get("name") or ""):
             try:
                 verdict = json.loads(m.get("content") or "{}")
             except json.JSONDecodeError:
                 verdict = {}
-            if verdict.get("decision") == "deny":
+            permanent = (verdict.get("decision") == "deny"
+                         and verdict.get("would_reschedule_to_hours") is None)
+            if permanent:
                 action = "no_action"
             break
     contacts = "link" in action or "reminder" in action

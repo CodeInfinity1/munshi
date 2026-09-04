@@ -24,6 +24,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import audit, db
 from .adapters.razorpay_test import build_adapter
+from .agent.tools import TOOL_SPECS
 from .clock import VirtualClock
 from .config import settings
 from .db import jload
@@ -120,6 +121,11 @@ def policy():
                                                        "or without approval.",
                    "actions": _at_tier(4)},
         },
+        "agent_tools": [
+            {"name": t.name, "description": t.description,
+             "moves_money": False, "terminal": t.name == "submit_decision"}
+            for t in TOOL_SPECS
+        ],
         "failure_families": families(),
         "razorpay_error_sources": source_semantics(),
         "regulatory": {
@@ -223,6 +229,99 @@ def audit_stream(case_id: str | None = None, stage: str | None = None,
         "records": [{**dict(r), "detail": jload(r["detail"], {})}
                     for r in db.rows(c, sql, tuple(args))],
     }
+
+
+@app.get("/api/activity")
+def activity(limit: int = Query(40, le=200), case_id: str | None = None, c=Depends(conn)):
+    """The agent's working stream, one row per *decision*.
+
+    A decision begins with a `diagnose` record; the policy verdict, the execution
+    and any settlement follow it in the same chain. Assembled from the audit trail
+    rather than from a separate log, so what the dashboard shows and what is
+    tamper-evident are the same records.
+    """
+    sql = "SELECT seq, ts, case_id, detail FROM audit WHERE stage = 'diagnose'"
+    args: list = []
+    if case_id:
+        sql += " AND case_id = ?"
+        args.append(case_id)
+    sql += " ORDER BY seq DESC LIMIT ?"
+    args.append(limit)
+
+    out = []
+    for head in db.rows(c, sql, tuple(args)):
+        case = db.one(c, "SELECT c.id, c.amount_paise, c.state, c.error_reason, c.kind,"
+                         " c.method, c.stop_reason, c.recovered_paise,"
+                         " cu.name AS customer_name, cu.segment"
+                         " FROM cases c JOIN customers cu ON cu.id = c.customer_id"
+                         " WHERE c.id = ?", (head["case_id"],))
+        if case is None:
+            continue
+        diag = jload(head["detail"], {}) or {}
+        agent = diag.get("agent") or {}
+
+        # The rest of this decision: the records that follow it for the same case,
+        # up to the next diagnosis.
+        tail = db.rows(
+            c,
+            "SELECT stage, summary, detail FROM audit WHERE case_id = ? AND seq > ?"
+            " AND seq < COALESCE((SELECT MIN(seq) FROM audit WHERE case_id = ?"
+            " AND stage = 'diagnose' AND seq > ?), 1e18) ORDER BY seq",
+            (head["case_id"], head["seq"], head["case_id"], head["seq"]),
+        )
+        stages = {r["stage"]: {"summary": r["summary"], **(jload(r["detail"], {}) or {})}
+                  for r in tail}
+        pol, exe, stop = stages.get("policy"), stages.get("execute"), stages.get("stop")
+
+        out.append({
+            "seq": head["seq"], "ts": head["ts"], "case": dict(case),
+            "priority": diag.get("priority"),
+            "diagnosis": {k: diag.get(k) for k in
+                          ("root_cause", "confidence", "recoverability", "rationale",
+                           "evidence", "reasoner", "model")},
+            "agent": {
+                "provider": agent.get("provider"), "model": agent.get("model"),
+                "turns": agent.get("turns"), "outcome": agent.get("outcome"),
+                "degrade_reason": agent.get("degrade_reason"),
+                "tools": [{"tool": t.get("tool"), "arguments": t.get("arguments"),
+                           "result": t.get("result")}
+                          for t in (agent.get("tool_calls") or [])],
+            } if agent else None,
+            "policy": {
+                "action": pol.get("action"), "tier": pol.get("tier"),
+                "decision": pol.get("decision"), "stop_reason": pol.get("stop_reason"),
+                "justification": pol.get("justification"),
+                "delay_hours": pol.get("delay_hours"),
+                "failed_rules": [r for r in (pol.get("rules") or []) if not r.get("passed")],
+                "rules_evaluated": len(pol.get("rules") or []),
+            } if pol else None,
+            "execution": {"outcome": exe.get("outcome"), "summary": exe.get("summary"),
+                          "channel": exe.get("channel"), "message": exe.get("message"),
+                          "simulated": exe.get("simulated"), "adapter": exe.get("adapter"),
+                          "recovered_paise": exe.get("amount_paise")} if exe else None,
+            "next": stop.get("summary") if stop else None,
+        })
+    return {"activity": out}
+
+
+@app.get("/api/triage")
+def triage(limit: int = Query(12, le=100), c=Depends(conn)):
+    """The prioritised queue: expected recoverable value, decomposed."""
+    from .triage import prioritise, recovery_score
+
+    now = _reference_now(c)
+    rows = db.rows(c, "SELECT * FROM cases ORDER BY amount_paise DESC LIMIT 400")
+    scored = []
+    for r in rows:
+        s = recovery_score(dict(r), build_context(c, r, now))
+        s["state"] = r["state"]
+        s["customer_id"] = r["customer_id"]
+        s["error_reason"] = r["error_reason"]
+        scored.append(s)
+    return {"queue": prioritise(scored, budget=limit),
+            "scored": len(scored),
+            "note": "Expected recoverable value = amount x P(recover) x urgency. "
+                    "Deterministic; the agent can read it as a tool but cannot change it."}
 
 
 @app.get("/api/approvals")

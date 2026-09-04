@@ -22,6 +22,7 @@ is exactly the kind of choice worth delegating.
 from __future__ import annotations
 
 import sqlite3
+import threading
 
 from .. import db, downtime
 from ..db import jload
@@ -42,12 +43,20 @@ class ToolError(ValueError):
 class Toolbox:
     """Tools bound to one case. Every call is recorded for the audit trail."""
 
-    def __init__(self, conn: sqlite3.Connection, case: dict, ctx: dict, now: int, policy):
+    def __init__(self, conn: sqlite3.Connection, case: dict, ctx: dict, now: int, policy,
+                 lock: threading.Lock | None = None):
         self.conn = conn
         self.case = case
         self.ctx = ctx
         self.now = now
         self.policy = policy
+        # Reasoning fans out across threads, and every read tool touches the same
+        # SQLite connection. `check_same_thread=False` permits use from another
+        # thread; it does not permit *concurrent* use, which surfaces as
+        # "bad parameter or other API misuse" under load. Reads are microseconds
+        # and the model call is the whole latency, so serialising them here costs
+        # nothing measurable and removes the race entirely.
+        self._lock = lock or threading.Lock()
         self.calls: list[dict] = []
 
     # -- dispatch ---------------------------------------------------------
@@ -56,7 +65,8 @@ class Toolbox:
         if fn is None:
             return {"error": f"unknown tool {name!r}", "available": sorted(TOOL_NAMES)}
         try:
-            out = fn(**args)
+            with self._lock:
+                out = fn(**args)
         except TypeError as exc:
             out = {"error": f"bad arguments for {name}: {exc}"}
         except ToolError as exc:
@@ -244,7 +254,10 @@ TOOL_SPECS = [
          "Dry-run a candidate action against the policy engine and see the verdict and any "
          "failing rules, without consuming anything. The same engine re-checks whatever you "
          "finally submit, so this cannot be used to get around a rule -- only to avoid "
-         "proposing something that would be refused.",
+         "proposing something that would be refused. IMPORTANT: a 'deny' that carries "
+         "would_reschedule_to_hours is temporary -- the case is simply not due yet, and "
+         "proposing the action anyway is correct because the engine will schedule it. Only "
+         "a 'deny' with a stop_reason and no reschedule is permanent.",
          {**_CASE_ID,
           "action_type": {"type": "string", "enum": sorted(ACTION_TIERS)},
           "delay_hours": {"type": "number", "description": "Hours from now, default 0."}},

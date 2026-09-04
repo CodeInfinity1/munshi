@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
@@ -63,6 +64,7 @@ class Orchestrator:
         #: Cases worked per tick. None means no cap; a cap makes prioritisation
         #: bite, which is the point of having it.
         self.work_budget = work_budget
+        self._db_lock = threading.Lock()
         self.run_id = f"run_{uuid.uuid4().hex[:10]}"
         self.stats = {
             "ticks": 0, "decisions": 0, "executed": 0, "allowed": 0,
@@ -184,7 +186,9 @@ class Orchestrator:
         """One toolbox per case: the agent's tools are scoped to the case it is
         deciding, so it cannot read or reason about anything else."""
         now = self.clock.now()
-        boxes = [Toolbox(self.conn, c, x, now, self.policy)
+        # One lock shared by every toolbox in this tick: they all read the same
+        # connection, so the guard has to be shared to mean anything.
+        boxes = [Toolbox(self.conn, c, x, now, self.policy, lock=self._db_lock)
                  for c, x in zip(cases, contexts, strict=True)]
         if len(contexts) == 1 or self.reasoner.name == "heuristic":
             return [self.reasoner.decide(x, b) for x, b in zip(contexts, boxes, strict=True)]
