@@ -61,7 +61,7 @@ The baseline is run *without* the compliance envelope, because a naive dunning c
 
 ## Arm detail: baseline
 
-- reasoner `fixed_ladder`, adapter `simulator`, 4.63s over 168 ticks
+- reasoner `fixed_ladder`, adapter `simulator`, 4.86s over 168 ticks
 
 Why cases stopped:
 
@@ -77,7 +77,7 @@ Recovery attributed by action:
 
 ## Arm detail: agent-heuristic
 
-- reasoner `heuristic`, adapter `simulator`, 4.42s over 168 ticks
+- reasoner `heuristic`, adapter `simulator`, 4.25s over 168 ticks
 
 Why cases stopped:
 
@@ -101,7 +101,7 @@ Recovery attributed by action:
 
 ## Arm detail: agent-heuristic-approved
 
-- reasoner `heuristic`, adapter `simulator`, 4.9s over 168 ticks
+- reasoner `heuristic`, adapter `simulator`, 4.81s over 168 ticks
 
 Why cases stopped:
 
@@ -126,7 +126,7 @@ Recovery attributed by action:
 
 ## Arm detail: agent-mock
 
-- reasoner `agent`, adapter `simulator`, 2.46s over 168 ticks
+- reasoner `agent`, adapter `simulator`, 2.4s over 168 ticks
 
 Why cases stopped:
 

@@ -1,5 +1,5 @@
 {
-  "generated_at": 1788556769,
+  "generated_at": 1788557839,
   "config": {
     "arms": "baseline,agent-heuristic,agent-heuristic-approved,agent-mock",
     "n": 320,
@@ -111,8 +111,8 @@
         "arm": "baseline",
         "reasoner": "fixed_ladder",
         "adapter": "simulator",
-        "run_id": "run_08dc2f6f0a",
-        "wall_seconds": 4.63,
+        "run_id": "run_4d8ad620b1",
+        "wall_seconds": 4.86,
         "ticks": 168,
         "deferred": 58,
         "prioritised": 5141,
@@ -121,7 +121,7 @@
         "audit": {
           "valid": true,
           "checked": 16588,
-          "head": "966f79be46b21137c7fc35ddbffed60eeb563b4bab679f375e964ca358ffa240"
+          "head": "c78a7cea98debac5b06c9f82cb1dc470d2ad9f9c0e3e71ad24edb00853275fba"
         },
         "db": "/tmp/munshi_eval_baseline_n320_s20260824.db"
       },
@@ -238,7 +238,7 @@
         "value_paise": 641166400,
         "items": [
           {
-            "action_id": "act_d2c3c3562f40",
+            "action_id": "act_0bea3e12fde3",
             "case_id": "case_0186",
             "action": "retry_payment",
             "amount_paise": 85375700,
@@ -246,7 +246,7 @@
             "decision": null
           },
           {
-            "action_id": "act_937e166a474a",
+            "action_id": "act_061bf2b6b383",
             "case_id": "case_0208",
             "action": "retry_payment",
             "amount_paise": 83209600,
@@ -254,7 +254,7 @@
             "decision": null
           },
           {
-            "action_id": "act_dad0e90ce99f",
+            "action_id": "act_18f747b130db",
             "case_id": "case_0154",
             "action": "escalate_to_collections",
             "amount_paise": 56805600,
@@ -262,7 +262,7 @@
             "decision": null
           },
           {
-            "action_id": "act_1e503c589936",
+            "action_id": "act_136c26ac2721",
             "case_id": "case_0119",
             "action": "retry_payment",
             "amount_paise": 58533600,
@@ -270,7 +270,7 @@
             "decision": null
           },
           {
-            "action_id": "act_36eb61464969",
+            "action_id": "act_3642c54b76d7",
             "case_id": "case_0243",
             "action": "escalate_to_collections",
             "amount_paise": 8653300,
@@ -278,7 +278,7 @@
             "decision": null
           },
           {
-            "action_id": "act_34c944dee0b3",
+            "action_id": "act_d711d42935a2",
             "case_id": "case_0005",
             "action": "escalate_to_collections",
             "amount_paise": 5999700,
@@ -286,7 +286,7 @@
             "decision": null
           },
           {
-            "action_id": "act_2028b5e63a6d",
+            "action_id": "act_caa3e667993c",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -294,7 +294,7 @@
             "decision": null
           },
           {
-            "action_id": "act_806a6ec1ad84",
+            "action_id": "act_df88a213b4c3",
             "case_id": "case_0127",
             "action": "escalate_to_collections",
             "amount_paise": 7869500,
@@ -302,7 +302,7 @@
             "decision": null
           },
           {
-            "action_id": "act_6f4e92b087ab",
+            "action_id": "act_235fac44db07",
             "case_id": "case_0312",
             "action": "escalate_to_collections",
             "amount_paise": 3020900,
@@ -310,7 +310,7 @@
             "decision": null
           },
           {
-            "action_id": "act_d0bc5d3183a2",
+            "action_id": "act_92fe47fc4548",
             "case_id": "case_0281",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -318,7 +318,7 @@
             "decision": null
           },
           {
-            "action_id": "act_51ea6a3cff2a",
+            "action_id": "act_040452799b14",
             "case_id": "case_0004",
             "action": "retry_payment",
             "amount_paise": 114499200,
@@ -326,7 +326,7 @@
             "decision": null
           },
           {
-            "action_id": "act_dbb8ece576d0",
+            "action_id": "act_8009560273b8",
             "case_id": "case_0273",
             "action": "retry_payment",
             "amount_paise": 91001900,
@@ -334,7 +334,7 @@
             "decision": null
           },
           {
-            "action_id": "act_21f1b92cca41",
+            "action_id": "act_845cf8acd1b4",
             "case_id": "case_0252",
             "action": "retry_payment",
             "amount_paise": 115323800,
@@ -370,8 +370,8 @@
         "arm": "agent-heuristic",
         "reasoner": "heuristic",
         "adapter": "simulator",
-        "run_id": "run_c18e583fc9",
-        "wall_seconds": 4.42,
+        "run_id": "run_0d5a0414a9",
+        "wall_seconds": 4.25,
         "ticks": 168,
         "deferred": 107,
         "prioritised": 4674,
@@ -380,7 +380,7 @@
         "audit": {
           "valid": true,
           "checked": 15015,
-          "head": "72f793cfe8dcefcbc320ad625bcc9fac43bd040a7e2c0d2413fb5e2587d94d93"
+          "head": "ee7020e453571b1f558b10b2de9056cb8d28dc37fb37845bb29a91c1603aef23"
         },
         "db": "/tmp/munshi_eval_agent-heuristic_n320_s20260824.db"
       },
@@ -496,7 +496,7 @@
         "value_paise": 1272894000,
         "items": [
           {
-            "action_id": "act_2ac27685af3a",
+            "action_id": "act_87b658025070",
             "case_id": "case_0186",
             "action": "retry_payment",
             "amount_paise": 85375700,
@@ -504,7 +504,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_5acc3eee842f",
+            "action_id": "act_19f41221caec",
             "case_id": "case_0208",
             "action": "retry_payment",
             "amount_paise": 83209600,
@@ -512,7 +512,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_403501172d9a",
+            "action_id": "act_0b24afd3e3fc",
             "case_id": "case_0154",
             "action": "escalate_to_collections",
             "amount_paise": 56805600,
@@ -520,7 +520,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_5a850d5de671",
+            "action_id": "act_e4753175281b",
             "case_id": "case_0119",
             "action": "retry_payment",
             "amount_paise": 58533600,
@@ -528,7 +528,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_ec4b48f369c1",
+            "action_id": "act_8605b50efa7e",
             "case_id": "case_0243",
             "action": "escalate_to_collections",
             "amount_paise": 8653300,
@@ -536,7 +536,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_b1ac25c37ec4",
+            "action_id": "act_20c78a58b9c8",
             "case_id": "case_0005",
             "action": "escalate_to_collections",
             "amount_paise": 5999700,
@@ -544,7 +544,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_a6637f499117",
+            "action_id": "act_5b69a1c66c50",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -552,7 +552,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_af91f097d844",
+            "action_id": "act_977251b9c920",
             "case_id": "case_0127",
             "action": "escalate_to_collections",
             "amount_paise": 7869500,
@@ -560,7 +560,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_f004325c3adb",
+            "action_id": "act_a1ae055c50ef",
             "case_id": "case_0312",
             "action": "escalate_to_collections",
             "amount_paise": 3020900,
@@ -568,7 +568,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_daaf189ede3d",
+            "action_id": "act_8f1cf99dab88",
             "case_id": "case_0281",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -576,7 +576,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_b5bba079daef",
+            "action_id": "act_1d49cab5919c",
             "case_id": "case_0004",
             "action": "retry_payment",
             "amount_paise": 114499200,
@@ -584,7 +584,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_f152df79f454",
+            "action_id": "act_b44a8ddb89aa",
             "case_id": "case_0186",
             "action": "retry_payment",
             "amount_paise": 85375700,
@@ -592,7 +592,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_dd78c219a893",
+            "action_id": "act_e1bc28492adf",
             "case_id": "case_0273",
             "action": "retry_payment",
             "amount_paise": 91001900,
@@ -600,7 +600,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_6ddbde61035a",
+            "action_id": "act_bac40b155870",
             "case_id": "case_0243",
             "action": "escalate_to_collections",
             "amount_paise": 8653300,
@@ -608,7 +608,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_87e5573dd021",
+            "action_id": "act_dfdf4851bd9b",
             "case_id": "case_0005",
             "action": "escalate_to_collections",
             "amount_paise": 5999700,
@@ -616,7 +616,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_cdb228a35122",
+            "action_id": "act_3d9076ba30a9",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -624,7 +624,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_f871acd4dff4",
+            "action_id": "act_bc87c79a0a86",
             "case_id": "case_0312",
             "action": "escalate_to_collections",
             "amount_paise": 3020900,
@@ -632,7 +632,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_f5ee20a2e1a4",
+            "action_id": "act_aeea7302fddc",
             "case_id": "case_0281",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -640,7 +640,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_c26924f3ba81",
+            "action_id": "act_522157e87b32",
             "case_id": "case_0186",
             "action": "retry_payment",
             "amount_paise": 85375700,
@@ -648,7 +648,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_1131ee42ae8c",
+            "action_id": "act_d9a6dd39607b",
             "case_id": "case_0243",
             "action": "escalate_to_collections",
             "amount_paise": 8653300,
@@ -656,7 +656,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_b270ea5161c0",
+            "action_id": "act_64c5b34d3ad7",
             "case_id": "case_0005",
             "action": "escalate_to_collections",
             "amount_paise": 5999700,
@@ -664,7 +664,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_4a06a4e21dcf",
+            "action_id": "act_b1e85c54b78d",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -672,7 +672,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_c2c030aba304",
+            "action_id": "act_3349751ad40c",
             "case_id": "case_0312",
             "action": "escalate_to_collections",
             "amount_paise": 3020900,
@@ -680,7 +680,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_dd9657ec92c1",
+            "action_id": "act_d3c3e5da29be",
             "case_id": "case_0281",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -688,7 +688,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_1258a1ee1c0b",
+            "action_id": "act_4a2ccc35238c",
             "case_id": "case_0252",
             "action": "retry_payment",
             "amount_paise": 115323800,
@@ -696,7 +696,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_ab56ea41721a",
+            "action_id": "act_95e02497010e",
             "case_id": "case_0005",
             "action": "escalate_to_collections",
             "amount_paise": 5999700,
@@ -704,7 +704,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_9e634f31dfc9",
+            "action_id": "act_db7773903f5f",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -712,7 +712,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_553e0d360798",
+            "action_id": "act_eee60ae0ed8c",
             "case_id": "case_0281",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -720,7 +720,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_7e07956ec899",
+            "action_id": "act_c4d859ac190a",
             "case_id": "case_0252",
             "action": "retry_payment",
             "amount_paise": 115323800,
@@ -728,7 +728,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_95f7a9b589fd",
+            "action_id": "act_c117af605350",
             "case_id": "case_0252",
             "action": "retry_payment",
             "amount_paise": 115323800,
@@ -736,7 +736,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_faf9006f93c7",
+            "action_id": "act_9ac220600807",
             "case_id": "case_0005",
             "action": "escalate_to_collections",
             "amount_paise": 5999700,
@@ -744,7 +744,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_d1597bac9b7d",
+            "action_id": "act_b7d67d100549",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -752,7 +752,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_53462d8cb28d",
+            "action_id": "act_1caa503fc28d",
             "case_id": "case_0281",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -760,7 +760,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_599152eddc59",
+            "action_id": "act_fa27034d3ecd",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -768,7 +768,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_dbb1d868c1c6",
+            "action_id": "act_827fe05edde4",
             "case_id": "case_0281",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -776,7 +776,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_e5f153634388",
+            "action_id": "act_cb3afc92821f",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -784,7 +784,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_897a85af7ce6",
+            "action_id": "act_63848b033635",
             "case_id": "case_0281",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -792,7 +792,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_849a82a16dec",
+            "action_id": "act_fa435a95c973",
             "case_id": "case_0154",
             "action": "escalate_to_collections",
             "amount_paise": 56805600,
@@ -800,7 +800,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_cc3497d1d41f",
+            "action_id": "act_a74336250cda",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -808,7 +808,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_abbb9101ce7a",
+            "action_id": "act_691414340216",
             "case_id": "case_0281",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -816,7 +816,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_3ec701732517",
+            "action_id": "act_866913b437d2",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -824,7 +824,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_86f3df8289d7",
+            "action_id": "act_623ae3973807",
             "case_id": "case_0281",
             "action": "escalate_to_collections",
             "amount_paise": 3036200,
@@ -832,7 +832,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_0c3940dcf2d7",
+            "action_id": "act_a1918a3fd39e",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -840,7 +840,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_e566d6dbcf98",
+            "action_id": "act_2f83252889c7",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -848,7 +848,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_7c56c7b1f7b9",
+            "action_id": "act_466e858ca189",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -856,7 +856,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_13c5c0a7875e",
+            "action_id": "act_ede0a29f4c09",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -864,7 +864,7 @@
             "decision": "approved"
           },
           {
-            "action_id": "act_48bae9bdceb5",
+            "action_id": "act_c64cbadbade4",
             "case_id": "case_0249",
             "action": "escalate_to_collections",
             "amount_paise": 7837400,
@@ -901,8 +901,8 @@
         "arm": "agent-heuristic-approved",
         "reasoner": "heuristic",
         "adapter": "simulator",
-        "run_id": "run_36ff824413",
-        "wall_seconds": 4.9,
+        "run_id": "run_73edbd6951",
+        "wall_seconds": 4.81,
         "ticks": 168,
         "deferred": 107,
         "prioritised": 4782,
@@ -911,7 +911,7 @@
         "audit": {
           "valid": true,
           "checked": 15451,
-          "head": "32c3d31504dacaf691e26a3bb3c32966393008297243ffafc0661de126036050"
+          "head": "1d691407e529ddb0bce31b58e15b2620cd73a13a2571f9abd86211a5898f4576"
         },
         "db": "/tmp/munshi_eval_agent-heuristic-approved_n320_s20260824.db"
       },
@@ -1027,7 +1027,7 @@
         "value_paise": 341618100,
         "items": [
           {
-            "action_id": "act_40c2a1c041ea",
+            "action_id": "act_7cdd6ffc4c99",
             "case_id": "case_0004",
             "action": "retry_payment",
             "amount_paise": 114499200,
@@ -1035,7 +1035,7 @@
             "decision": null
           },
           {
-            "action_id": "act_6b31c0c85d66",
+            "action_id": "act_4af2f29ed4a0",
             "case_id": "case_0186",
             "action": "retry_payment",
             "amount_paise": 85375700,
@@ -1043,7 +1043,7 @@
             "decision": null
           },
           {
-            "action_id": "act_7f6dc704da79",
+            "action_id": "act_664edad2625b",
             "case_id": "case_0208",
             "action": "retry_payment",
             "amount_paise": 83209600,
@@ -1051,7 +1051,7 @@
             "decision": null
           },
           {
-            "action_id": "act_63fc33043ca8",
+            "action_id": "act_8bcc35697d7c",
             "case_id": "case_0119",
             "action": "retry_payment",
             "amount_paise": 58533600,
@@ -1086,8 +1086,8 @@
         "arm": "agent-mock",
         "reasoner": "agent",
         "adapter": "simulator",
-        "run_id": "run_526f9fe9cf",
-        "wall_seconds": 2.46,
+        "run_id": "run_0a07cc8d43",
+        "wall_seconds": 2.4,
         "ticks": 168,
         "deferred": 11,
         "prioritised": 1638,
@@ -1096,7 +1096,7 @@
         "audit": {
           "valid": true,
           "checked": 5820,
-          "head": "ea1b56208cde76193e9d1285267e0cb0d34dc562e44fc12ab5bc9df0312ba33b"
+          "head": "61b4fc03800188e5f8740199edf79966d63f20c7730bd1a01652ddc4465cfa9c"
         },
         "db": "/tmp/munshi_eval_agent-mock_n320_s20260824.db"
       },
