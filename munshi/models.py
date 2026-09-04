@@ -25,7 +25,16 @@ class CaseState:
     STOPPED = "stopped"                 # terminal, a stopping rule fired
     ESCALATED = "escalated"             # terminal for the agent, handed to a human
     SUPPRESSED = "suppressed"           # terminal, must not be contacted at all
-    TERMINAL = (RECOVERED, STOPPED, ESCALATED, SUPPRESSED)
+    #: The customer paid through another channel. Real money, but not ours to
+    #: claim: it is counted separately and never reaches the recovery ledger.
+    SETTLED_EXTERNALLY = "settled_externally"
+    TERMINAL = (RECOVERED, STOPPED, ESCALATED, SUPPRESSED, SETTLED_EXTERNALLY)
+
+    @classmethod
+    def terminal_placeholders(cls) -> str:
+        """`?,?,?...` sized to TERMINAL, so adding a state cannot silently break
+        an IN clause somewhere else."""
+        return ",".join("?" * len(cls.TERMINAL))
 
 
 # ---------------------------------------------------------------------------

@@ -216,6 +216,12 @@ def _latent(rng: random.Random, family: str, cust: dict, kind: str) -> dict:
     if kind == "invoice_overdue":
         lat["will_promise_to_pay"] = rng.random() < 0.45
         lat["honours_promise"] = rng.random() < 0.62
+    # The race every real recovery system has to survive: the customer pays
+    # through another channel while we are mid-workflow. Chasing them after that
+    # is the same false positive as chasing someone Razorpay already told us
+    # had paid -- it is just harder to notice.
+    if recoverable and family not in ("already_settled", "risk_flagged") and rng.random() < 0.07:
+        lat["settles_externally_after_h"] = rng.choice([6, 18, 30, 54, 90, 150])
     return lat
 
 

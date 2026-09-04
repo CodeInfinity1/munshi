@@ -21,9 +21,11 @@ def run(conn, days=14, **kw):
 
 def test_every_case_reaches_a_terminal_state(seeded):
     run(seeded)
+    holding = (*CaseState.TERMINAL, CaseState.AWAITING_APPROVAL)
     open_cases = db.rows(
-        seeded, "SELECT id, state FROM cases WHERE state NOT IN (?,?,?,?,?)",
-        (*CaseState.TERMINAL, CaseState.AWAITING_APPROVAL))
+        seeded,
+        f"SELECT id, state FROM cases WHERE state NOT IN ({','.join('?' * len(holding))})",
+        holding)
     assert open_cases == [], f"cases left in limbo: {[dict(r) for r in open_cases]}"
 
 
@@ -112,3 +114,55 @@ def test_a_replayed_event_does_not_produce_a_second_recovery(seeded):
                             " WHERE executed_at IS NOT NULL GROUP BY idempotency_key"
                             " HAVING n > 1")
     assert dupes == []
+
+
+# ---------------------------------------------------------------------------
+# The concurrent-settlement race
+# ---------------------------------------------------------------------------
+def test_a_customer_paying_elsewhere_mid_recovery_stops_the_case(conn):
+    """The race every real recovery system has to survive."""
+    from munshi.db import jdump
+
+    make_case(conn, error_reason="insufficient_funds",
+              opened_at=BATCH_START - 3600,
+              latent=jdump({"family": "balance_dependent", "recoverable": True,
+                            "funds_available_after_h": 200, "intent": "cold",
+                            "responds_to_contact": 0.1, "seed": 7,
+                            "settles_externally_after_h": 4}))
+    run(conn, days=3)
+    row = db.one(conn, "SELECT * FROM cases WHERE id='case_t1'")
+    assert row["state"] == CaseState.SETTLED_EXTERNALLY
+    assert row["stop_reason"] == "customer_paid_through_another_channel"
+    assert row["settled_externally_at"] is not None
+
+
+def test_externally_settled_money_is_never_claimed_as_recovery(conn):
+    """Claiming an out-of-band payment is the oldest trick in attribution."""
+    from munshi.db import jdump
+
+    make_case(conn, amount_paise=500000, error_reason="insufficient_funds",
+              opened_at=BATCH_START - 3600,
+              latent=jdump({"family": "balance_dependent", "recoverable": True,
+                            "funds_available_after_h": 200, "intent": "cold",
+                            "responds_to_contact": 0.1, "seed": 9,
+                            "settles_externally_after_h": 4}))
+    run(conn, days=3)
+    assert db.scalar(conn, "SELECT COUNT(*) FROM ledger WHERE case_id='case_t1'") == 0
+    assert db.scalar(conn, "SELECT recovered_paise FROM cases WHERE id='case_t1'") == 0
+
+
+def test_no_customer_is_contacted_after_settling_elsewhere(conn):
+    from munshi.db import jdump
+
+    make_case(conn, error_reason="card_expired", opened_at=BATCH_START - 3600,
+              latent=jdump({"family": "instrument_dead", "recoverable": True,
+                            "will_replace_instrument": False, "intent": "cold",
+                            "responds_to_contact": 0.1, "seed": 11,
+                            "settles_externally_after_h": 1}))
+    run(conn, days=5)
+    settled_at = db.scalar(conn, "SELECT settled_externally_at FROM cases WHERE id='case_t1'")
+    assert settled_at
+    later = db.scalar(
+        conn, "SELECT COUNT(*) FROM actions WHERE case_id='case_t1' AND executed_at > ?",
+        (settled_at,))
+    assert later == 0, "contacted a customer after they had already paid"

@@ -68,7 +68,7 @@ class Orchestrator:
             "ticks": 0, "decisions": 0, "executed": 0, "allowed": 0,
             "approval_required": 0, "not_executed": 0, "deferred": 0,
             "blocked": 0, "rescheduled": 0, "downtimes_resolved": 0, "prioritised": 0,
-            "degraded": 0,
+            "degraded": 0, "settled_externally": 0, "settled_externally_paise": 0,
             "recovered_paise": 0, "recovered_cases": 0,
         }
 
@@ -117,7 +117,8 @@ class Orchestrator:
         the state distribution accounts for every rupee in the batch."""
         now = self.clock.now()
         for r in db.rows(self.conn,
-                         "SELECT * FROM cases WHERE state NOT IN (?,?,?,?)",
+                         f"SELECT * FROM cases WHERE state NOT IN"
+                         f" ({CaseState.terminal_placeholders()})",
                          (*CaseState.TERMINAL,)):
             case = dict(r)
             if case["state"] == CaseState.AWAITING_APPROVAL:
@@ -127,7 +128,8 @@ class Orchestrator:
     def anything_pending(self) -> bool:
         return bool(db.scalar(
             self.conn,
-            "SELECT COUNT(*) FROM cases WHERE state NOT IN (?,?,?,?)",
+            f"SELECT COUNT(*) FROM cases WHERE state NOT IN"
+            f" ({CaseState.terminal_placeholders()})",
             (*CaseState.TERMINAL,),
         ))
 
@@ -136,6 +138,7 @@ class Orchestrator:
         now = self.clock.now()
         self.stats["ticks"] += 1
         self.stats["downtimes_resolved"] += downtime.publish_resolutions(self.conn, now)
+        self._apply_external_settlements(now)
         self._verify_pending(now)
 
         sql = (
@@ -370,6 +373,44 @@ class Orchestrator:
         # Awaiting an out-of-band outcome (e.g. a payment link the customer may pay).
         return self._schedule(case, int(now + 12 * 3600), now, "awaiting payment outcome")
 
+    def _apply_external_settlements(self, now: int) -> None:
+        """Land out-of-band payments.
+
+        A customer paying through another channel mid-recovery is the race every
+        real system has to survive. The payment happens regardless of whether the
+        recovery system notices, so this runs for every arm; what differs is
+        whether the policy engine then checks for it before acting.
+
+        The money is real, but it is NOT ours: no ledger row is written, and it is
+        reported separately from recovered revenue. Claiming it would be the
+        oldest trick in attribution.
+        """
+        rows = db.rows(
+            self.conn,
+            f"SELECT id, latent, opened_at, amount_paise FROM cases"
+            f" WHERE settled_externally_at IS NULL AND state NOT IN"
+            f" ({CaseState.terminal_placeholders()})",
+            (*CaseState.TERMINAL,),
+        )
+        for r in rows:
+            after = (db.jload(r["latent"], {}) or {}).get("settles_externally_after_h")
+            if after is None or now < r["opened_at"] + after * 3600:
+                continue
+            self.conn.execute("UPDATE cases SET settled_externally_at=? WHERE id=?",
+                              (now, r["id"]))
+            self.stats["settled_externally"] += 1
+            self.stats["settled_externally_paise"] += int(r["amount_paise"])
+            audit.record(
+                self.conn, ts=now, run_id=self.run_id, case_id=r["id"], stage="verify",
+                summary=f"customer paid Rs {r['amount_paise'] / 100:,.0f} through another "
+                        "channel; not counted as recovery",
+                detail={"settled_externally_at": now, "amount_paise": r["amount_paise"],
+                        "attributed_to_munshi": False},
+            )
+            case = dict(db.one(self.conn, "SELECT * FROM cases WHERE id=?", (r["id"],)))
+            self._terminal(case, now, CaseState.SETTLED_EXTERNALLY,
+                           "customer_paid_through_another_channel")
+
     def _verify_pending(self, now: int) -> None:
         """Resolve outcomes that could not be known at execution time.
 
@@ -381,7 +422,8 @@ class Orchestrator:
             self.conn,
             "SELECT a.*, c.state, c.latent, c.amount_paise, c.promise_to_pay_at FROM actions a"
             " JOIN cases c ON c.id = a.case_id WHERE a.outcome='pending'"
-            " AND a.executed_at IS NOT NULL AND c.state NOT IN (?,?,?,?)",
+            f" AND a.executed_at IS NOT NULL AND c.state NOT IN"
+            f" ({CaseState.terminal_placeholders()})",
             (*CaseState.TERMINAL,),
         )
         for r in rows:

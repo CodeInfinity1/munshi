@@ -60,6 +60,9 @@ CREATE TABLE IF NOT EXISTS cases (
     promise_to_pay_at   INTEGER,               -- customer committed to pay by this date
     deferred_key        TEXT,                  -- attempt-state a deliberate deferral was issued for
     downtime_holds      INTEGER NOT NULL DEFAULT 0,  -- times we waited on an outage
+    -- Customer paid through another channel while we were working the case.
+    -- Real money, but NOT ours to claim: it never gets a ledger row.
+    settled_externally_at INTEGER,
     stop_reason         TEXT,
     recovered_paise     INTEGER NOT NULL DEFAULT 0,
     latent              TEXT,                  -- json: simulator ground truth. NEVER read by the agent.

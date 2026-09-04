@@ -122,9 +122,16 @@ class PolicyEngine:
             f"case state is {case['state']}", "deny")
 
         # --- money already collected -----------------------------------------
-        already_paid = sem.family == "already_settled"
+        # Two ways money can already be in the bank: Razorpay told us at failure
+        # time (order_already_paid), or it landed out-of-band while we were
+        # working the case. The second is harder to notice and just as damaging.
+        settled_mid_flight = case.get("settled_externally_at") is not None
+        already_paid = sem.family == "already_settled" or settled_mid_flight
         if already_paid and action != "suppress_case":
             add("not_already_settled", False,
+                "the customer paid through another channel while this case was in flight; "
+                "chasing them now would contact someone who has already paid"
+                if settled_mid_flight else
                 "Razorpay reports order_already_paid: this money is already collected, and "
                 "chasing it would contact a customer who has already paid", "deny")
             return self._finish(rules, stop_reason="already_settled")

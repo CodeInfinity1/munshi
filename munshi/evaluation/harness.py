@@ -176,6 +176,13 @@ def render(payload: dict) -> str:
     row("Annualised MRR protected",
         lambda m: rs(m["money"]["annualised_mrr_protected_paise"]))
 
+    if any(n.startswith("agent-mock") for n in names):
+        lines += ["", "> **Read the `agent-mock` arm's intervention accuracy as an artefact, "
+                  "not a result.** The mock provider picks its action from the same taxonomy "
+                  "family the accuracy metric scores against, so it is correct by "
+                  "construction. That arm exists to prove the tool loop runs end to end "
+                  "without a network, not to say anything about judgement quality."]
+
     lines += ["", "## Efficiency and harm", "",
               "| Metric | " + " | ".join(names) + " |", "|---|" + "---|" * len(names)]
     row("Actions executed", lambda m: m["actions"]["executed"])

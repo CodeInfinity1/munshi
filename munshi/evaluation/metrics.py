@@ -69,10 +69,18 @@ def compute(conn: sqlite3.Connection, violations: list[dict] | None = None) -> d
         if latent[a["case_id"]].get("family") in ZERO_YIELD_RETRY_FAMILIES
     ]
     # The most damaging false positive in revenue recovery: messaging somebody who
-    # has already paid.
+    # has already paid. Two ways it happens -- Razorpay told us at failure time,
+    # or the money landed out-of-band while the case was in flight. The second is
+    # harder to notice and counts the same.
+    settled_at = {c["id"]: c["settled_externally_at"] for c in cases}
     chased_already_paid = [
-        a for a in contacts if latent[a["case_id"]].get("family") == "already_settled"
+        a for a in contacts
+        if latent[a["case_id"]].get("family") == "already_settled"
+        or (settled_at.get(a["case_id"]) is not None
+            and a["executed_at"] is not None
+            and a["executed_at"] > settled_at[a["case_id"]])
     ]
+    externally_settled = [c for c in cases if c["settled_externally_at"] is not None]
     contacted_opted_out = [
         a for a in contacts
         if db.scalar(conn, "SELECT contact_opt_out FROM customers WHERE id ="
@@ -129,6 +137,9 @@ def compute(conn: sqlite3.Connection, violations: list[dict] | None = None) -> d
             "annualised_mrr_at_risk_paise": sum(c["mrr_paise"] for c in cases) * 12,
             "annualised_mrr_protected_paise": sum(
                 c["mrr_paise"] for c in cases if c["state"] == "recovered") * 12,
+            # Real money, but not ours: the customer paid through another channel
+            # while the case was in flight. Reported, never claimed.
+            "settled_externally_paise": sum(c["amount_paise"] for c in externally_settled),
         },
         "cases": {
             "total": len(cases),
@@ -154,6 +165,12 @@ def compute(conn: sqlite3.Connection, violations: list[dict] | None = None) -> d
             "wasted_retries": len(wasted_retries),
             "wasted_retry_rate": _pct(len(wasted_retries), len(retries)),
             "customers_chased_after_paying": len(chased_already_paid),
+            "externally_settled_cases": len(externally_settled),
+            "chased_after_external_settlement": sum(
+                1 for a in contacts
+                if settled_at.get(a["case_id"]) is not None
+                and a["executed_at"] is not None
+                and a["executed_at"] > settled_at[a["case_id"]]),
             "opted_out_customers_contacted": len(contacted_opted_out),
             "intervention_accuracy": _pct(len(correct), len(scored)),
             "intervention_scored": len(scored),
