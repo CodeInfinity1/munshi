@@ -338,6 +338,117 @@ def approvals(c=Depends(conn)):
     ]}
 
 
+@app.get("/api/razorpay")
+def razorpay_status(c=Depends(conn)):
+    """Live connectivity check against Razorpay test mode.
+
+    With test-mode keys configured this makes a **real** call to
+    GET /v1/payments/downtimes and reports what came back, so the Razorpay
+    integration is demonstrable rather than merely architectural. With no keys it
+    says so plainly and reports nothing it did not do.
+    """
+    s = settings()
+    out: dict = {
+        "credentials_present": s.razorpay_credentials_present,
+        "adapter": s.effective_adapter,
+        "key_id_prefix": (s.razorpay_key_id or "")[:12] or None,
+        "webhook_secret_configured": bool(s.razorpay_webhook_secret),
+        "stored_downtimes": db.scalar(c, "SELECT COUNT(*) FROM downtimes"),
+        "live_call": None,
+    }
+    if s.effective_adapter != "razorpay_test":
+        out["note"] = ("Simulator adapter. No Razorpay call was made. Set "
+                       "MUNSHI_ADAPTER=razorpay_test with rzp_test_* keys to enable "
+                       "real test-mode calls.")
+        return out
+
+    from .adapters.razorpay_test import RazorpayTestAdapter
+
+    try:
+        items = RazorpayTestAdapter().fetch_downtimes()
+        out["live_call"] = {"endpoint": "GET /v1/payments/downtimes", "ok": True,
+                            "downtimes_returned": len(items),
+                            "sample": items[:3]}
+        out["note"] = "Real Razorpay test-mode call succeeded."
+    except Exception as exc:  # noqa: BLE001 - reported, never hidden
+        out["live_call"] = {"endpoint": "GET /v1/payments/downtimes", "ok": False,
+                            "error": f"{type(exc).__name__}: {exc}"[:300]}
+        out["note"] = "Razorpay test-mode call failed. The error is reported as-is."
+    return out
+
+
+@app.post("/api/razorpay/sync-downtimes", dependencies=GUARD)
+def sync_downtimes(c=Depends(conn)):
+    """Pull the live Payment Downtime feed into the local table.
+
+    In production this table is kept current by the payment.downtime.* webhooks;
+    this is the pull equivalent, and the same rows drive the agent's
+    get_downtime_status tool either way.
+    """
+    if settings().effective_adapter != "razorpay_test":
+        raise HTTPException(400, "requires MUNSHI_ADAPTER=razorpay_test and test-mode keys")
+    from .adapters.razorpay_test import RazorpayTestAdapter, normalise_downtime
+
+    items = [normalise_downtime(i) for i in RazorpayTestAdapter().fetch_downtimes()]
+    for d in items:
+        c.execute(
+            "INSERT INTO downtimes (id,method,instrument,begin_at,end_at,status,severity,"
+            "scheduled) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET"
+            " status=excluded.status, end_at=excluded.end_at, severity=excluded.severity",
+            (d["id"], d["method"], db.jdump(d["instrument"]), d["begin_at"], d["end_at"],
+             d["status"], d["severity"], d["scheduled"]),
+        )
+    return {"synced": len(items), "source": "GET /v1/payments/downtimes (test mode)"}
+
+
+@app.get("/api/escalations")
+def escalations(c=Depends(conn)):
+    """Cases the agent handed to a human, grouped by who now owns them.
+
+    An escalation with no owner and no next action is a dead end dressed up as a
+    handoff, so every reason here carries both.
+    """
+    owners = {
+        "risk_decline_requires_human_review": (
+            "Risk / fraud review",
+            "Review the decline manually. An automated system must not retry or chase "
+            "its way past a risk decision."),
+        "emandate_requires_customer_afa": (
+            "Customer", "Send a mandate re-authorisation link; only the customer can "
+                        "complete fresh additional-factor authentication above the "
+                        "AFA-free ceiling."),
+        "not_a_customer_resolvable_failure": (
+            "Merchant ops", "Fix the account or method configuration. The customer "
+                            "cannot enable a disabled payment method."),
+        "escalate_to_merchant_ops_completed": (
+            "Merchant ops", "Enable the payment method or bank, then Munshi will "
+                            "re-present automatically."),
+        "open_engineering_ticket_completed": (
+            "Engineering", "The integration is sending a malformed request. Retrying "
+                           "it cannot work; the caller has to change."),
+        "adapter_cannot_execute": (
+            "Platform", "The configured adapter cannot perform this action. Nothing "
+                        "was executed and nothing was simulated."),
+    }
+    rows = db.rows(c, "SELECT cs.*, cu.name AS customer_name FROM cases cs"
+                      " JOIN customers cu ON cu.id = cs.customer_id"
+                      " WHERE cs.state = 'escalated' ORDER BY cs.amount_paise DESC")
+    groups: dict[str, dict] = {}
+    for r in rows:
+        reason = r["stop_reason"] or "unknown"
+        owner, action = owners.get(reason, ("Merchant ops", "Review this case manually."))
+        g = groups.setdefault(reason, {"reason": reason, "owner": owner,
+                                       "next_action": action, "cases": [],
+                                       "value_paise": 0})
+        g["cases"].append({"id": r["id"], "customer_name": r["customer_name"],
+                           "amount_paise": r["amount_paise"],
+                           "error_reason": r["error_reason"]})
+        g["value_paise"] += r["amount_paise"]
+    return {"groups": sorted(groups.values(), key=lambda g: -g["value_paise"]),
+            "total_paise": sum(g["value_paise"] for g in groups.values()),
+            "total_cases": len(rows)}
+
+
 @app.get("/api/evaluation")
 def evaluation():
     """The committed batch evaluation, so a reviewer sees the numbers without

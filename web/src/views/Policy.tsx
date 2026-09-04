@@ -22,6 +22,46 @@ const LIMIT_LABEL: Record<string, string> = {
 const RUPEE_KEYS = new Set(["max_autonomous_retry_paise", "max_autonomous_action_paise",
   "max_run_exposure_paise", "escalate_to_collections_min_paise"]);
 
+function RazorpayPanel() {
+  const [s, setS] = useState<any>(null);
+  useEffect(() => { fetch("/api/razorpay").then((r) => r.json()).then(setS)
+    .catch(() => {}); }, []);
+  if (!s) return null;
+  const live = s.live_call;
+  return (
+    <Panel title="Razorpay integration"
+           meta={s.adapter === "razorpay_test" ? "test mode" : "simulator"}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Pill tone={s.credentials_present ? "recovered" : "stopped"}>
+          {s.credentials_present ? `keys present (${s.key_id_prefix}…)` : "no keys configured"}
+        </Pill>
+        <Pill tone={s.webhook_secret_configured ? "recovered" : "stopped"}>
+          {s.webhook_secret_configured ? "webhook secret set" : "webhook refuses all traffic"}
+        </Pill>
+        <Pill tone={s.adapter === "razorpay_test" ? "recovered" : "at-risk"}>
+          adapter: {s.adapter}
+        </Pill>
+        <span className="tnum text-[length:var(--text-2xs)] text-[var(--ink-3)]">
+          {s.stored_downtimes} downtime records stored
+        </span>
+      </div>
+      {live && (
+        <p className="mt-3 rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-xs)]"
+           style={{ background: live.ok ? "var(--recovered-soft)" : "var(--escalated-soft)",
+                    color: live.ok ? "var(--recovered-ink)" : "var(--escalated-ink)" }}>
+          <code className="mono">{live.endpoint}</code>{" "}
+          {live.ok ? `→ ${live.downtimes_returned} downtimes returned`
+                   : `→ ${live.error}`}
+        </p>
+      )}
+      <p className="mt-2 max-w-[92ch] text-[length:var(--text-2xs)] leading-relaxed
+                    text-[var(--ink-2)]">
+        {s.note}
+      </p>
+    </Panel>
+  );
+}
+
 /** The bounds, published. A merchant should be able to read exactly what the
  *  agent may do without reading the source. */
 export function Policy() {
@@ -90,6 +130,34 @@ export function Policy() {
           </dl>
         </Panel>
       </div>
+
+      <RazorpayPanel />
+
+      <Panel title="Agent tools"
+             meta="what the model can call; none of it moves money">
+        <ul className="divide-y">
+          {(p.agent_tools ?? []).map((t: any) => (
+            <li key={t.name} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2
+                                        first:pt-0 last:pb-0">
+              <code className="mono w-56 shrink-0 text-[length:var(--text-xs)] font-semibold">
+                {t.name}
+              </code>
+              <Pill tone={t.terminal ? "held" : "recovered"}>
+                {t.terminal ? "terminal · proposes" : "read-only"}
+              </Pill>
+              <p className="min-w-[30ch] flex-1 text-[length:var(--text-2xs)] leading-relaxed
+                            text-[var(--ink-2)]">
+                {t.description}
+              </p>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[length:var(--text-2xs)] text-[var(--ink-3)]">
+          There is no retry_payment tool, no create_payment_link, and no send_message. The
+          only way the model affects anything is by proposing an action that the policy
+          engine and the executor then handle.
+        </p>
+      </Panel>
 
       <Panel title="Razorpay error_source semantics"
              meta="Razorpay's own guidance on who must act, used as a routing signal">

@@ -5,6 +5,7 @@ import { ApprovalQueue } from "../components/ApprovalQueue";
 import { CaseDrawer } from "../components/CaseDrawer";
 import { ActivityStream } from "../components/ActivityStream";
 import { CaseTable } from "../components/CaseTable";
+import { Handoffs } from "../components/Handoffs";
 import { PriorityQueue } from "../components/PriorityQueue";
 import { RunBar } from "../components/RunBar";
 import { Panel } from "../components/primitives";
@@ -174,17 +175,26 @@ export function Desk({
           </div>
         </Panel>
 
-        <Panel flush title="Needs a human"
-               meta={approvals.filter((a) => !a.decided_at).length
-                 ? `${approvals.filter((a) => !a.decided_at).length} pending` : undefined}>
-          <div className="max-h-[62vh] overflow-y-auto">
-            <ApprovalQueue
-              approvals={approvals}
-              heldPaise={m?.held_for_approval_paise ?? 0}
-              onChange={refresh}
-            />
-          </div>
-        </Panel>
+        <div className="flex flex-col gap-4">
+          <Panel flush title="Needs a human"
+                 meta={approvals.filter((a) => !a.decided_at).length
+                   ? `${approvals.filter((a) => !a.decided_at).length} pending` : undefined}>
+            <div className="max-h-[40vh] overflow-y-auto">
+              <ApprovalQueue
+                approvals={approvals}
+                heldPaise={m?.held_for_approval_paise ?? 0}
+                onChange={refresh}
+              />
+            </div>
+          </Panel>
+          <Panel flush title="Handed off"
+                 meta="agent stopped, a human owns it">
+            <div className="max-h-[32vh] overflow-y-auto">
+              <Handoffs onSelect={setSelected}
+                        refreshKey={overview?.money.recovered_paise} />
+            </div>
+          </Panel>
+        </div>
       </div>
 
       {selected && <CaseDrawer caseId={selected} onClose={() => setSelected(null)} />}

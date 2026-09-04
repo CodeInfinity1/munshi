@@ -131,3 +131,42 @@ def test_overview_reports_audit_verification(client):
     assert body["audit"]["valid"] is True
     assert body["money"]["at_risk_paise"] > 0
     assert body["config"]["adapter"] == "simulator"
+
+
+def test_razorpay_status_reports_no_call_when_there_are_no_keys(client):
+    """The integration panel must never imply a call it did not make."""
+    body = client.get("/api/razorpay").json()
+    assert body["credentials_present"] is False
+    assert body["adapter"] == "simulator"
+    assert body["live_call"] is None
+    assert "No Razorpay call was made" in body["note"]
+
+
+def test_downtime_sync_refuses_without_the_live_adapter(client):
+    r = client.post("/api/razorpay/sync-downtimes", headers=AUTH)
+    assert r.status_code == 400
+    assert "razorpay_test" in r.json()["detail"]
+
+
+def test_every_escalation_has_an_owner_and_a_next_action(client):
+    """An escalation with no owner is a dead end dressed up as a handoff."""
+    from munshi import db
+
+    c = db.connect()
+    c.execute("UPDATE cases SET state='escalated',"
+              " stop_reason='risk_decline_requires_human_review'"
+              " WHERE id = (SELECT id FROM cases LIMIT 1)")
+    c.close()
+    body = client.get("/api/escalations").json()
+    assert body["total_cases"] >= 1
+    for g in body["groups"]:
+        assert g["owner"] and g["next_action"]
+        assert g["value_paise"] > 0
+
+
+def test_policy_publishes_the_agent_tool_surface(client):
+    tools = client.get("/api/policy").json()["agent_tools"]
+    names = {t["name"] for t in tools}
+    assert "submit_decision" in names
+    assert not (names & {"retry_payment", "create_payment_link", "send_message"})
+    assert all(t["moves_money"] is False for t in tools)
