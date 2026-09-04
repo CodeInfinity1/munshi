@@ -17,9 +17,13 @@ build: ## Build the dashboard into the Python package
 seed: ## Generate and load the 320-case demo batch
 	$(PY) -m munshi.seed.load
 
-eval: ## Run the batch evaluation across all arms and write evaluation/
+eval: ## Run the batch evaluation and write evaluation/
 	$(PY) -m munshi.evaluation.harness \
-	  --arms baseline,agent-heuristic,agent-heuristic-approved
+	  --arms baseline,agent-heuristic,agent-heuristic-approved,agent-mock
+
+eval-groq: ## Same, plus the live Groq agent arm (needs GROQ_API_KEY)
+	$(PY) -m munshi.evaluation.harness \
+	  --arms baseline,agent-heuristic,agent-groq,agent-groq-approved --out evaluation-groq
 
 test: ## Run the test suite
 	$(PY) -m pytest -q
@@ -39,4 +43,4 @@ clean:
 	rm -f munshi.db munshi.db-wal munshi.db-shm
 	rm -rf munshi/static web/dist .pytest_cache .ruff_cache
 
-.PHONY: help install build seed eval test lint serve demo check clean
+.PHONY: help install build seed eval eval-groq test lint serve demo check clean

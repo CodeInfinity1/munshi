@@ -27,3 +27,6 @@ munshi/static/
 web/*.tsbuildinfo
 web/tsconfig.*.tsbuildinfo
 web/tsconfig.node.tsbuildinfo
+
+# Local evaluation output from the Groq arm
+evaluation-groq/

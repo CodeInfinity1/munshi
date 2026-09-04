@@ -15,13 +15,16 @@ jobs:
       - name: Lint
         run: ruff check munshi tests
       - name: Test
+        # No GROQ_API_KEY in CI on purpose: the whole suite, including the agent
+        # loop and every adversarial path, must pass with no credential.
         run: pytest -q
       - name: Evaluation reproduces the committed numbers
         # The batch is deterministic, so a drift here means a behaviour change
         # landed without the reported figures being updated.
         run: |
           python -m munshi.evaluation.harness \
-            --arms baseline,agent-heuristic,agent-heuristic-approved --out /tmp/eval
+            --arms baseline,agent-heuristic,agent-heuristic-approved,agent-mock \
+            --out /tmp/eval
           python - <<'PY'
           import json
           new = json.load(open("/tmp/eval/results.json"))["arms"]

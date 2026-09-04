@@ -3,8 +3,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-# Tests must never reach a real API or a real payment rail.
-os.environ.pop("ANTHROPIC_API_KEY", None)
+# Tests must never reach a real API or a real payment rail. The whole suite,
+# including every agent path, has to pass with no credential present.
+os.environ.pop("GROQ_API_KEY", None)
+os.environ.pop("MUNSHI_REASONER", None)
 os.environ["MUNSHI_ADAPTER"] = "simulator"
 os.environ["MUNSHI_TIMEZONE"] = "Asia/Kolkata"
 os.environ["MUNSHI_API_TOKEN"] = "test-token"
