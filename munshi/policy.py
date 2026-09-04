@@ -88,7 +88,11 @@ class PolicyEngine:
     def run_exposure_paise(self) -> int:
         return sum(self._exposed_cases.values())
 
-    def evaluate(self, case: dict, plan, ctx: dict, now: int) -> PolicyDecision:
+    def evaluate(self, case: dict, plan, ctx: dict, now: int,
+                 dry_run: bool = False) -> PolicyDecision:
+        """`dry_run` lets the agent ask what *would* happen without consuming
+        anything. Consulting the policy must never be a way to spend against it,
+        and the real check still runs on whatever the agent finally submits."""
         rules: list[RuleVerdict] = []
         action = plan.action_type
         tier = ACTION_TIERS.get(action, Tier.FORBIDDEN)
@@ -311,7 +315,7 @@ class PolicyEngine:
             else f"no successful {action} on this case yet", "deny")
 
         decision = self._finish(rules)
-        if decision.decision == "allow" and is_money:
+        if decision.decision == "allow" and is_money and not dry_run:
             self._exposed_cases[case["id"]] = amount
         return decision
 

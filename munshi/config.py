@@ -38,10 +38,16 @@ class Settings:
     timezone: str = field(default_factory=lambda: _env("MUNSHI_TIMEZONE", "Asia/Kolkata"))
 
     # --- reasoning -----------------------------------------------------------
-    anthropic_api_key: str | None = field(default_factory=lambda: _env("ANTHROPIC_API_KEY"))
-    llm_model: str = field(default_factory=lambda: _env("MUNSHI_LLM_MODEL", "claude-opus-5"))
-    llm_effort: str = field(default_factory=lambda: _env("MUNSHI_LLM_EFFORT", "low"))
+    groq_api_key: str | None = field(default_factory=lambda: _env("GROQ_API_KEY"))
+    groq_model: str = field(default_factory=lambda: _env("GROQ_MODEL", "openai/gpt-oss-120b"))
+    groq_reasoning_effort: str | None = field(
+        default_factory=lambda: _env("GROQ_REASONING_EFFORT", "medium"))
+    llm_timeout_seconds: float = field(
+        default_factory=lambda: float(_env("MUNSHI_LLM_TIMEOUT", "45")))
     llm_concurrency: int = field(default_factory=lambda: _int("MUNSHI_LLM_CONCURRENCY", 8))
+    #: Hard ceiling on tool-calling turns per case. An agent that will not decide
+    #: must stop costing money, so the loop is bounded rather than open-ended.
+    agent_max_turns: int = field(default_factory=lambda: _int("MUNSHI_AGENT_MAX_TURNS", 6))
 
     # --- execution -----------------------------------------------------------
     adapter: str = field(default_factory=lambda: _env("MUNSHI_ADAPTER", "simulator"))
@@ -57,7 +63,12 @@ class Settings:
 
     @property
     def llm_available(self) -> bool:
-        return bool(self.anthropic_api_key)
+        return bool(self.groq_api_key)
+
+    @property
+    def llm_provider(self) -> str:
+        """Groq when a key is present, otherwise the deterministic stand-in."""
+        return "groq" if self.groq_api_key else "mock"
 
     @property
     def razorpay_credentials_present(self) -> bool:
@@ -66,11 +77,12 @@ class Settings:
     def describe(self) -> dict[str, object]:
         """Non-secret summary surfaced in the UI so the demo can never overclaim."""
         return {
-            "reasoner": "llm" if self.llm_available else "heuristic",
-            "llm_model": self.llm_model if self.llm_available else None,
-            "llm_effort": self.llm_effort if self.llm_available else None,
+            "reasoner": "agent" if self.llm_available else "heuristic",
+            "llm_provider": self.llm_provider if self.llm_available else None,
+            "llm_model": self.groq_model if self.llm_available else None,
             "adapter": self.effective_adapter,
             "razorpay_credentials_present": self.razorpay_credentials_present,
+            "agent_max_turns": self.agent_max_turns,
             "timezone": self.timezone,
         }
 

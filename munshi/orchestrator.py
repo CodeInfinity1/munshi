@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from . import audit, db, downtime
 from .adapters.base import UnsupportedInTestMode
+from .agent.tools import Toolbox
 from .clock import VirtualClock
 from .config import settings
 from .db import jdump
@@ -29,6 +30,7 @@ from .enrich import build_context
 from .models import ACTION_TIERS, CaseState, Tier
 from .policy import PolicyEngine
 from .taxonomy import lookup
+from .triage import prioritise, recovery_score
 
 log = logging.getLogger("munshi.orchestrator")
 
@@ -48,7 +50,7 @@ CONTACT_ACTIONS = {
 
 class Orchestrator:
     def __init__(self, conn, reasoner, adapter, clock, *, mode="agent", policy=None,
-                 auto_approve=False):
+                 auto_approve=False, work_budget: int | None = None):
         self.conn: sqlite3.Connection = conn
         self.reasoner = reasoner
         self.adapter = adapter
@@ -58,11 +60,15 @@ class Orchestrator:
         #: Demo/eval convenience: stand in for a merchant clicking Approve. Off by
         #: default -- an unattended run leaves L3 actions parked, which is the point.
         self.auto_approve = auto_approve
+        #: Cases worked per tick. None means no cap; a cap makes prioritisation
+        #: bite, which is the point of having it.
+        self.work_budget = work_budget
         self.run_id = f"run_{uuid.uuid4().hex[:10]}"
         self.stats = {
             "ticks": 0, "decisions": 0, "executed": 0, "allowed": 0,
             "approval_required": 0, "not_executed": 0, "deferred": 0,
-            "blocked": 0, "rescheduled": 0, "downtimes_resolved": 0,
+            "blocked": 0, "rescheduled": 0, "downtimes_resolved": 0, "prioritised": 0,
+            "degraded": 0,
             "recovered_paise": 0, "recovered_cases": 0,
         }
 
@@ -81,6 +87,7 @@ class Orchestrator:
 
     def finish(self) -> dict:
         now = self.clock.now()
+        self.stats["degraded"] = getattr(self.reasoner, "degraded", 0)
         self.conn.execute("UPDATE runs SET ended_at=?, notes=? WHERE id=?",
                           (now, jdump(self.stats), self.run_id))
         audit.record(self.conn, ts=now, run_id=self.run_id, stage="stop",
@@ -145,9 +152,24 @@ class Orchestrator:
         # Enrichment is pure reads, and the reasoning call is the slow part, so the
         # decision pass fans out. Everything that writes is serialised below.
         contexts = [build_context(self.conn, c, now) for c in due]
-        decisions = self._decide_many(contexts)
 
-        for case, ctx, (diag, plan) in zip(due, contexts, decisions, strict=True):
+        # Prioritise. An agent with finite capacity has to choose what to work on,
+        # and on a book where a third of failed value is uncollectable, "biggest
+        # first" puts money that can never come back at the top of the queue.
+        scores = [recovery_score(c, x) for c, x in zip(due, contexts, strict=True)]
+        order = {s["case_id"]: i for i, s in enumerate(prioritise(scores))}
+        ranked = sorted(
+            zip(due, contexts, scores, strict=True), key=lambda t: order[t[0]["id"]])
+        if self.work_budget:
+            ranked = ranked[: self.work_budget]
+        due = [t[0] for t in ranked]
+        contexts = [t[1] for t in ranked]
+        self.stats["prioritised"] += len(due)
+
+        decisions = self._decide_many(due, contexts)
+
+        for (case, ctx, score), (diag, plan) in zip(ranked, decisions, strict=True):
+            ctx["priority"] = score
             try:
                 self._apply(case, ctx, diag, plan, now)
             except Exception:  # noqa: BLE001 - one bad case must not kill the batch
@@ -155,12 +177,18 @@ class Orchestrator:
                 self._stop(case, now, "internal_error")
         return len(due)
 
-    def _decide_many(self, contexts: list[dict]):
+    def _decide_many(self, cases: list[dict], contexts: list[dict]):
+        """One toolbox per case: the agent's tools are scoped to the case it is
+        deciding, so it cannot read or reason about anything else."""
+        now = self.clock.now()
+        boxes = [Toolbox(self.conn, c, x, now, self.policy)
+                 for c, x in zip(cases, contexts, strict=True)]
         if len(contexts) == 1 or self.reasoner.name == "heuristic":
-            return [self.reasoner.decide(c) for c in contexts]
+            return [self.reasoner.decide(x, b) for x, b in zip(contexts, boxes, strict=True)]
         workers = max(1, settings().llm_concurrency)
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            return list(pool.map(self.reasoner.decide, contexts))
+            return list(pool.map(lambda p: self.reasoner.decide(*p),
+                                 zip(contexts, boxes, strict=True)))
 
     # ------------------------------------------------------------------
     def _apply(self, case, ctx, diag, plan, now) -> None:
@@ -174,7 +202,11 @@ class Orchestrator:
                     "evidence": diag.evidence, "reasoner": diag.reasoner, "model": diag.model,
                     "amount_inr": ctx["case"]["amount_inr"],
                     "error_reason": ctx["failure"]["error_reason"],
-                    "downtime": ctx["downtime"].get("state")},
+                    "downtime": ctx["downtime"].get("state"),
+                    "priority": ctx.get("priority"),
+                    # The full tool trace: which tools it reached for and what came
+                    # back. This is what the dashboard renders as agent activity.
+                    "agent": plan.params.get("agent_trace")},
         )
 
         decision = self.policy.evaluate(case, plan, ctx, now)

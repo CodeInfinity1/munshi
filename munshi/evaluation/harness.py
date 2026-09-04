@@ -7,10 +7,14 @@ truth and identical per-case luck.
 
 Arms
   baseline         fixed retry ladder + caps only (what most merchants run)
-  agent-heuristic  taxonomy-driven reasoner + full policy engine
+  agent-heuristic  taxonomy-driven deterministic reasoner + full policy engine
   agent-heuristic-approved
                    same, with a merchant approving the queued L3 actions
-  agent-llm        Claude-backed reasoner + full policy engine (needs a key)
+  agent-mock       the real tool-calling loop, driven by the deterministic mock
+                   provider -- proves the loop end to end with no network
+  agent-groq       the tool-calling loop against Groq (needs GROQ_API_KEY)
+  agent-groq-approved
+                   same, with a merchant approving the queued L3 actions
 
 Reporting the heuristic arm separately is deliberate. It is the honest control
 for "is the model earning its place, or is the taxonomy doing all the work?" --
@@ -28,7 +32,7 @@ from .. import audit, db
 from ..adapters.simulator import SimulatorAdapter
 from ..clock import VirtualClock
 from ..config import settings
-from ..reason import HeuristicReasoner, LLMReasoner
+from ..reason import AgentReasoner, HeuristicReasoner
 from ..seed.generate import BATCH_START
 from ..seed.load import load
 from .baseline import FixedLadderReasoner, LadderPolicy
@@ -49,10 +53,14 @@ def run_arm(arm: str, n: int, seed: int, days: int, step_hours: int,
         reasoner, policy = FixedLadderReasoner(), LadderPolicy(conn)
     elif arm in ("agent-heuristic", "agent-heuristic-approved"):
         reasoner, policy = HeuristicReasoner(), None
-    elif arm == "agent-llm":
+    elif arm in ("agent-mock", "agent-mock-approved"):
+        from ..llm.mock_provider import MockProvider
+
+        reasoner, policy = AgentReasoner(provider=MockProvider()), None
+    elif arm in ("agent-groq", "agent-groq-approved"):
         if not settings().llm_available:
-            raise RuntimeError("ANTHROPIC_API_KEY is not set; cannot run the agent-llm arm")
-        reasoner, policy = LLMReasoner(), None
+            raise RuntimeError("GROQ_API_KEY is not set; cannot run the agent-groq arm")
+        reasoner, policy = AgentReasoner(), None
     else:
         raise ValueError(f"unknown arm {arm}")
 
@@ -75,7 +83,9 @@ def run_arm(arm: str, n: int, seed: int, days: int, step_hours: int,
         "arm": arm, "reasoner": reasoner.name, "adapter": orch.adapter.name,
         "run_id": orch.run_id, "wall_seconds": round(elapsed, 2), "ticks": stats["ticks"],
         "deferred": stats.get("deferred", 0),
+        "prioritised": stats.get("prioritised", 0),
         "degraded_to_heuristic": getattr(reasoner, "degraded", 0),
+        "degrade_reasons": dict(getattr(reasoner, "degrade_reasons", {}) or {}),
         "audit": audit.verify(conn), "db": path,
     }
     m["batch"] = {"n": n, "seed": seed, "recovery_window_days": days,
@@ -86,8 +96,8 @@ def run_arm(arm: str, n: int, seed: int, days: int, step_hours: int,
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Run the Munshi batch evaluation.")
-    ap.add_argument("--arms", default="baseline,agent-heuristic",
-                    help="comma-separated: baseline, agent-heuristic, agent-llm")
+    ap.add_argument("--arms", default="baseline,agent-heuristic,agent-heuristic-approved",
+                    help="comma-separated; see the module docstring for the full list")
     ap.add_argument("-n", type=int, default=320)
     ap.add_argument("--seed", type=int, default=20260824)
     ap.add_argument("--days", type=int, default=14)

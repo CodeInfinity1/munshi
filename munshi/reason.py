@@ -1,37 +1,35 @@
-"""The reasoning layer: diagnose a failure, then propose one intervention.
+"""The reasoning layer: two implementations of one interface.
+
+`AgentReasoner` runs a bounded tool-calling loop against Groq. It receives a
+compact case brief -- deliberately not the whole context pack -- and decides for
+itself what else to look at: the payer's other cases, the live downtime feed, what
+has already been tried, the deterministic recovery score, or a policy dry-run on
+an action it is unsure about. It ends by calling `submit_decision`.
+
+`HeuristicReasoner` is a complete deterministic implementation of the same
+interface, driven off the taxonomy. It is the zero-credential fallback, the
+degradation target when anything about the model goes wrong, and an evaluation
+arm in its own right -- which is how "is the model earning its cost, or is the
+taxonomy doing all the work?" becomes a question with a number attached.
 
 **Why an LLM is here at all.** Most of this pipeline is deterministic on purpose.
-The model earns its place on exactly three things, all of which are judgement over
-heterogeneous evidence rather than lookup:
+The model earns its place on three things, all judgement over heterogeneous
+evidence rather than lookup: disambiguating opaque failures (Razorpay documents
+`payment_failed` as "no specific error code received from gateway"), choosing
+between defensible interventions and their timing, and writing the customer
+message. It does not decide retryability, enforce limits, compute money, or
+execute anything.
 
-1. *Disambiguating opaque failures.* Razorpay documents `payment_failed` as
-   "no specific error code received from gateway". Whether that particular
-   Rs 84,000 decline is an outage, a balance problem or a dying card is a
-   weighing of downtime state, customer history, amount and timing. A lookup
-   table cannot do it; a rule tree for it would be a worse model.
-2. *Choosing between defensible interventions and their timing.* "Retry at 20:00
-   because this payer has settled at 20:00 eleven times" versus "send an
-   instrument-update link now" is a trade-off across signals that do not reduce
-   to one ordering.
-3. *Writing the actual customer message*, in register, referencing the real
-   reason, without a template's tell.
-
-**What it is not allowed to touch.** Retryability comes from the taxonomy. Limits,
-windows and stopping rules come from the policy engine. Money is arithmetic.
-Every field the model returns is validated against a closed vocabulary, and a
-malformed or out-of-vocabulary response falls back to the deterministic reasoner
-rather than being coerced into something plausible.
-
-`HeuristicReasoner` is a full deterministic implementation of the same interface.
-It is the offline fallback, and it is also an evaluation arm: running the batch
-through both is how we find out whether the model is actually adding recovery
-rather than just adding cost.
+**What it returns is a proposal, not an instruction.** Every field is re-validated
+against a closed vocabulary before it goes anywhere -- a schema-shaped response is
+still an untrusted response -- and any failure at all degrades to the
+deterministic path with the reason recorded on the case.
 """
 
 from __future__ import annotations
 
-import json
 import logging
+from collections import Counter
 
 from .config import settings
 from .models import ACTION_TIERS, ROOT_CAUSES, Diagnosis, Plan
@@ -42,78 +40,13 @@ log = logging.getLogger("munshi.reason")
 CHANNELS = ("email", "sms", "whatsapp", "none")
 MAX_DELAY_HOURS = 336.0  # 14 days: the outer edge of any recovery window
 
-DECISION_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "root_cause": {"type": "string", "enum": list(ROOT_CAUSES)},
-        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-        "recoverability": {"type": "number", "minimum": 0, "maximum": 1},
-        "diagnosis_rationale": {"type": "string", "maxLength": 320},
-        "evidence": {"type": "array", "items": {"type": "string"}, "maxItems": 4},
-        "action_type": {"type": "string", "enum": sorted(ACTION_TIERS)},
-        "delay_hours": {"type": "number", "minimum": 0, "maximum": MAX_DELAY_HOURS},
-        "channel": {"type": "string", "enum": list(CHANNELS)},
-        "message": {"type": "string", "maxLength": 480},
-        "justification": {"type": "string", "maxLength": 320},
-    },
-    "required": ["root_cause", "confidence", "recoverability", "diagnosis_rationale",
-                 "evidence", "action_type", "delay_hours", "channel", "message",
-                 "justification"],
-    "additionalProperties": False,
-}
-
-SYSTEM = """You are the reasoning core of Munshi, a revenue-recovery agent for Indian \
-merchants on Razorpay. You are given one revenue-risk case with a fully resolved \
-context pack, and you return one diagnosis and one proposed intervention.
-
-WHAT HAS ALREADY BEEN DECIDED WITHOUT YOU
-- `failure.retry_on_same_instrument_is_futile` is derived from Razorpay's published \
-failure taxonomy. When it is true, a retry on this instrument cannot succeed. Do not \
-propose one; propose the action that changes the precondition instead.
-- `failure.who_must_act` says whose problem this is. When it is `merchant` or \
-`engineering`, contacting the customer is an actively wrong action -- the customer \
-cannot fix a disabled payment method or a malformed order request.
-- `downtime` is Razorpay's live Payment Downtime feed for this exact instrument. An \
-active high or medium severity downtime means a retry now is near-worthless; the \
-useful move is to wait for it to clear.
-- `compliance` reports whether the RBI Fair Practices Code contact window \
-(08:00-19:00 local) and the NPCI non-peak auto-debit windows are currently open.
-- Retry caps, contact caps, cooldowns, exposure limits and stopping rules are \
-enforced downstream by a policy engine you cannot override. Propose the action you \
-believe is right; it will be checked.
-
-YOUR JUDGEMENT IS WANTED ON
-- Root cause, when the failure code is ambiguous or the context contradicts it.
-- Which intervention is worth spending a bounded attempt on, and WHEN.
-- Whether this money is worth chasing at all. Proposing `no_action` on a case with \
-low recoverability is a correct and valuable answer, not a failure to engage.
-- The customer-facing message, when one is warranted.
-
-TIMING. `delay_hours` is measured from NOW, but the preconditions are measured from when the failure happened -- `case.age_hours`. A 24-hour balance backoff on a failure that is already six days old has been satisfied for five days; waiting another 24 hours burns window for nothing. Subtract the age before you wait. Use timing deliberately:
-- Balance problems: time the retry to when money plausibly lands, and prefer the \
-customer's `typical_success_hour_local` when one is known.
-- Active downtime: wait past `downtime.hold_hours`.
-- Customer who just abandoned an authentication: intent decays in hours, act fast.
-- Outside the contact window: the policy engine will defer contact to 08:00 local. \
-You do not need to pad for it, but do not fight it.
-
-MESSAGE. Plain, specific, Indian-English business register. Reference the real \
-reason and the real amount. No emoji, no guilt, no fake urgency, no invented \
-offers, discounts, deadlines or account details. Empty string when the action \
-does not contact anyone.
-
-Return only the structured decision object. Keep `diagnosis_rationale` and \
-`justification` to one or two sentences of stated reasoning -- they are written into \
-a merchant-visible audit trail."""
-
-
 class HeuristicReasoner:
     """Deterministic reasoner. The offline fallback, and an evaluation arm in its
     own right: it answers 'what does the taxonomy alone get you?'"""
 
     name = "heuristic"
 
-    def decide(self, ctx: dict) -> tuple[Diagnosis, Plan]:
+    def decide(self, ctx: dict, toolbox=None) -> tuple[Diagnosis, Plan]:
         f = ctx["failure"]
         case, cust, dt = ctx["case"], ctx["customer"], ctx["downtime"]
         sem = lookup(f["error_reason"])
@@ -299,52 +232,56 @@ class HeuristicReasoner:
         return round(max(0.0, min(1.0, base)), 3)
 
 
-class LLMReasoner:
-    """Anthropic-backed reasoner with a hard schema and a deterministic fallback."""
+class AgentReasoner:
+    """Tool-using agent. Proposes; never executes."""
 
-    name = "llm"
+    name = "agent"
 
-    def __init__(self, fallback: HeuristicReasoner | None = None):
-        import anthropic
+    def __init__(self, provider=None, fallback: HeuristicReasoner | None = None,
+                 max_turns: int | None = None):
+        from .llm import build_provider
 
-        s = settings()
-        self._client = anthropic.Anthropic(api_key=s.anthropic_api_key)
-        self._model = s.llm_model
-        self._effort = s.llm_effort
+        self.provider = provider or build_provider()
+        self.model = self.provider.model
         self._fallback = fallback or HeuristicReasoner()
-        self.degraded = 0  # count of cases that fell back, surfaced in the run summary
+        self._max_turns = max_turns or settings().agent_max_turns
+        self.degraded = 0
+        self.degrade_reasons: Counter = Counter()
+        self.last_trace: dict | None = None
 
-    def decide(self, ctx: dict) -> tuple[Diagnosis, Plan]:
+    def decide(self, ctx: dict, toolbox=None) -> tuple[Diagnosis, Plan]:
+        from .agent.loop import AgentFailed, run_agent
+        from .llm.base import LLMError
+
+        if toolbox is None:
+            # Without tools there is no agent, only a prompt. Refuse to pretend.
+            return self._degrade(ctx, "no toolbox supplied")
         try:
-            raw = self._call(ctx)
-            return self._validate(raw, ctx)
-        except Exception as exc:  # noqa: BLE001 - any model failure degrades, never crashes
-            self.degraded += 1
-            log.warning("reasoner degraded to heuristic for %s: %s", ctx["case"]["id"], exc)
-            diag, plan = self._fallback.decide(ctx)
-            diag.rationale = f"[LLM unavailable: {type(exc).__name__}] {diag.rationale}"
+            raw, trace = run_agent(self.provider, toolbox, build_brief(ctx),
+                                   max_turns=self._max_turns)
+            diag, plan = self._validate(raw, trace)
+            self.last_trace = trace.summary()
             return diag, plan
+        except (AgentFailed, LLMError, ValueError) as exc:
+            return self._degrade(ctx, f"{type(exc).__name__}: {exc}")
 
-    def _call(self, ctx: dict) -> dict:
-        resp = self._client.messages.create(
-            model=self._model,
-            max_tokens=4000,
-            # The system prompt is byte-stable across every case in the batch, so it
-            # caches; only the per-case context pack is uncached input.
-            system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
-            output_config={
-                "effort": self._effort,
-                "format": {"type": "json_schema", "schema": DECISION_SCHEMA},
-            },
-            messages=[{"role": "user", "content": json.dumps(ctx, separators=(",", ":"))}],
-        )
-        if resp.stop_reason == "refusal":
-            raise RuntimeError(f"model refused: {getattr(resp.stop_details, 'category', None)}")
-        text = next(b.text for b in resp.content if b.type == "text")
-        return json.loads(text)
+    def _degrade(self, ctx: dict, reason: str) -> tuple[Diagnosis, Plan]:
+        """Any model failure lands here. Financial state is never touched by it."""
+        self.degraded += 1
+        self.degrade_reasons[reason.split(":")[0]] += 1
+        log.warning("agent degraded for %s: %s", ctx["case"]["id"], reason)
+        diag, plan = self._fallback.decide(ctx)
+        diag.rationale = f"[agent unavailable: {reason[:120]}] {diag.rationale}"
+        diag.reasoner = "heuristic"
+        self.last_trace = {"provider": self.provider.name, "model": self.model,
+                           "outcome": "degraded", "degrade_reason": reason[:200],
+                           "turns": 0, "tools_used": [], "tool_calls": []}
+        return diag, plan
 
-    def _validate(self, raw: dict, ctx: dict) -> tuple[Diagnosis, Plan]:
+    def _validate(self, raw: dict, trace) -> tuple[Diagnosis, Plan]:
         """Trust nothing. A schema-shaped response is still an untrusted response."""
+        if not isinstance(raw, dict):
+            raise ValueError("submit_decision arguments were not an object")
         action = raw.get("action_type")
         if action not in ACTION_TIERS:
             raise ValueError(f"action_type {action!r} is outside the closed vocabulary")
@@ -353,19 +290,18 @@ class LLMReasoner:
             raise ValueError(f"root_cause {cause!r} is outside the closed vocabulary")
         channel = raw.get("channel") if raw.get("channel") in CHANNELS else "none"
 
-        clamp = lambda v, lo, hi: max(lo, min(hi, float(v)))  # noqa: E731
         diag = Diagnosis(
             root_cause=cause,
-            confidence=clamp(raw.get("confidence", 0.5), 0.0, 1.0),
-            recoverability=clamp(raw.get("recoverability", 0.5), 0.0, 1.0),
+            confidence=_clamp(raw.get("confidence", 0.5), 0.0, 1.0),
+            recoverability=_clamp(raw.get("recoverability", 0.5), 0.0, 1.0),
             rationale=str(raw.get("diagnosis_rationale", ""))[:320],
             evidence=[str(e)[:200] for e in (raw.get("evidence") or [])][:4],
-            reasoner=self.name, model=self._model,
+            reasoner=self.name, model=self.model,
         )
         message = (raw.get("message") or "").strip() or None
         plan = Plan(
-            action_type=action, params={},
-            delay_hours=clamp(raw.get("delay_hours", 0), 0.0, MAX_DELAY_HOURS),
+            action_type=action, params={"agent_trace": trace.summary()},
+            delay_hours=_clamp(raw.get("delay_hours", 0), 0.0, MAX_DELAY_HOURS),
             channel=channel, message=message,
             justification=str(raw.get("justification", ""))[:320],
             reasoner=self.name,
@@ -373,8 +309,57 @@ class LLMReasoner:
         return diag, plan
 
 
+def build_brief(ctx: dict) -> dict:
+    """The opening brief.
+
+    Deliberately smaller than the full context pack. Handing the agent everything
+    up front would make its tools decorative; this gives it the case and the
+    facts it always needs, and leaves the payer's history, the downtime feed, the
+    recovery score and the policy dry-run to be fetched when they matter.
+    """
+    f, c = ctx["failure"], ctx["case"]
+    return {
+        "case_id": c["id"],
+        "case": {
+            "id": c["id"], "kind": c["kind"], "amount_inr": c["amount_inr"],
+            "method": c["method"], "age_hours": c["age_hours"],
+            "days_overdue": c["days_overdue"],
+            "attempts_by_munshi": c["munshi_attempts"],
+            "attempts_before_munshi": c["attempts_before_munshi"],
+            "contacts_sent": c["contacts_sent"],
+            "retries_remaining": c["retries_remaining"],
+            "contacts_remaining": c["contacts_remaining"],
+            "materiality": ctx["money"]["materiality"],
+            "is_recurring": ctx["money"]["is_recurring"],
+        },
+        "failure": {
+            "error_source": f["error_source"], "error_step": f["error_step"],
+            "error_reason": f["error_reason"], "family": f["family"],
+            "retry_on_same_instrument_is_futile": f["retry_on_same_instrument_is_futile"],
+            "who_must_act": f["who_must_act"],
+            "razorpay_description": f["razorpay_description"],
+            "resolution_requires": f["resolution_requires"],
+            "min_backoff_hours": f["min_backoff_hours"],
+        },
+        "compliance": ctx["compliance"],
+        "tool_hint": "Read tools are free. Reach for get_downtime_status when the failure "
+                     "could be infrastructural, get_payment_history when the code is "
+                     "ambiguous, get_recovery_history when attempts have already been "
+                     "spent, and check_policy before proposing anything you are unsure of.",
+    }
+
+
+def _clamp(v, lo, hi) -> float:
+    try:
+        return max(lo, min(hi, float(v)))
+    except (TypeError, ValueError):
+        return lo
+
+
 def build_reasoner(force: str | None = None):
-    """`force` is used by the evaluation harness to pin an arm."""
-    if force == "heuristic" or (force is None and not settings().llm_available):
+    """`force` is 'heuristic' or 'agent'; the evaluation harness uses it to pin an arm."""
+    if force == "heuristic":
         return HeuristicReasoner()
-    return LLMReasoner()
+    if force == "agent" or settings().llm_available:
+        return AgentReasoner()
+    return HeuristicReasoner()

@@ -34,7 +34,7 @@ class FixedLadderReasoner:
 
     name = "fixed_ladder"
 
-    def decide(self, ctx: dict):
+    def decide(self, ctx: dict, toolbox=None):
         from ..models import Diagnosis, Plan
 
         case = ctx["case"]
