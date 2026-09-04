@@ -10,7 +10,10 @@ import (a `.env` file or a test fixture must be able to change it — that was a
 real bug). `.env` is git-ignored; `.env.example` documents each variable and what
 it unlocks. Nothing is committed. `git log -p` contains no keys.
 
-The demo runs completely with all of them unset.
+`GROQ_API_KEY` is read server-side only and never reaches the browser; the
+dashboard learns which model is in use from `/api/health`, which returns the
+model *name* and never the credential. The demo runs completely with all secrets
+unset.
 
 ## Authentication and authorization
 
@@ -74,19 +77,39 @@ The controls that matter, in the order they bite:
 A single bug or a fully-compromised model cannot exceed these, because none of
 them is reachable from the reasoning layer.
 
-## Prompt injection
+## The model's blast radius
 
-Customer-controlled text (names, VPAs, entity ids) reaches the model's context.
-The defence is that a successful injection buys nothing:
+Customer-controlled text (names, VPAs, entity ids) reaches the agent's context,
+and tool results carry more of it. The defence is not prompt hygiene — it is that
+a successful injection buys nothing:
 
-- The output schema is a closed enum. There is no free-text action.
-- Tiers come from a static table, not from the response.
-- Retryability, budgets, windows and ceilings are all applied after the model
+- **No tool the model can call moves money or reaches a customer.** Six reads, one
+  calculation, one dry run, and a terminal tool that produces a *proposal*. There
+  is nothing to redirect. Asserted by a test that checks the tool registry against
+  a list of forbidden names.
+- `check_policy` runs the real engine with `dry_run=True`, so consulting policy
+  cannot consume against it, and the same engine re-checks the final submission.
+- The terminal tool's schema is a closed enum; tiers come from a static table.
+- Retryability, budgets, windows and ceilings are all applied *after* the model
   returns.
-- Everything attempted is in the hash-chained audit trail.
+- The per-run circuit breaker caps distinct value in flight regardless of how many
+  actions are proposed.
+- Every tool call, every argument and every verdict is in the hash-chained audit
+  trail.
 
-At worst an attacker gets a differently-timed *legitimate* action within the
-merchant's own limits.
+At worst, an attacker in full control of the model gets a differently-timed
+*legitimate* action within the merchant's own limits.
+
+## LLM failure cannot corrupt financial state
+
+Because it never touches it. Missing credential, timeout, rate limit, 5xx,
+malformed tool arguments, an invented tool, an invented action, an out-of-range
+number, prose instead of a tool call, or an agent that simply will not decide —
+every one of them is caught, classified, counted, and degraded to the
+deterministic reasoner with the reason recorded on the case. Provider exceptions
+are mapped onto Munshi's own error classes rather than propagated raw, and a rate
+limit is retried exactly once: retrying a malformed response or a rejected
+credential only spends money.
 
 ## Audit integrity
 

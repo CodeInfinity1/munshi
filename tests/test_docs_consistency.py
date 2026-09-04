@@ -14,6 +14,16 @@ ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "evaluation" / "results.json"
 
 
+def _demo_case_amounts() -> set[str]:
+    """Amounts of the cases the demo script and README name by id. Read from the
+    seeded batch, so renaming a case or reseeding fails here rather than silently
+    leaving a wrong number in the prose."""
+    from munshi.db import jload  # noqa: F401  (imported for the seeded-batch path)
+    from munshi.seed.generate import build
+
+    return {indian(c["amount_paise"] / 100) for c in build()["cases"]}
+
+
 def indian(rupees: float) -> str:
     """Indian digit grouping: 18320352 -> 1,83,20,352."""
     s = str(int(rupees))
@@ -33,6 +43,7 @@ def indian(rupees: float) -> str:
 def test_quoted_money_matches_the_committed_evaluation(doc):
     arms = json.loads(RESULTS.read_text())["arms"]
     text = (ROOT / doc).read_text()
+    batch = arms["baseline"]["batch"]
 
     expected = {
         indian(arms["baseline"]["money"]["at_risk_paise"] / 100),
@@ -40,19 +51,26 @@ def test_quoted_money_matches_the_committed_evaluation(doc):
         indian(arms["agent-heuristic"]["money"]["recovered_paise"] / 100),
         indian(arms["agent-heuristic-approved"]["money"]["recovered_paise"] / 100),
         indian(arms["agent-heuristic"]["money"]["held_for_approval_paise"] / 100),
-        indian(arms["baseline"]["batch"]["structurally_unretryable_paise"] / 100),
+        indian(batch["structurally_unretryable_paise"] / 100),
     }
-    # Any rupee figure with Indian grouping in the prose must be one we can account
-    # for: a headline number, an MRR figure, or a policy limit.
+    # Any rupee figure with Indian grouping in the prose must be accountable to the
+    # committed evaluation, a policy constant, or a real case in the demo batch.
+    # Derived rather than listed: a hand-maintained allowlist is how this drifted
+    # in the first place.
     allowed = expected | {
         indian(a["money"][k] / 100)
         for a in arms.values()
-        for k in ("latently_recoverable_paise", "annualised_mrr_at_risk_paise",
-                  "annualised_mrr_protected_paise", "escalated_paise")
-    } | {"2,00,000", "1,00,000", "15,000", "25,000", "2,00,00,000", "1,83,20,352",
-         "1,22,000", "12,02,857", "11,37,126", "3,91,331", "76,967", "28,211",
-         "9,10,019", "76,026", "1,21,838", "1,51,241", "11,51,241", "6,66,579",
-         "1,194,054", "4,99,900"}
+        for k in a["money"]
+        if isinstance(a["money"][k], int)
+    } | {
+        # Policy constants, which are deliberately round numbers.
+        "2,00,000", "1,00,000", "15,000", "25,000", "2,00,00,000",
+    } | _demo_case_amounts() | {
+        # Derived comparisons the prose is allowed to state.
+        indian((arms["baseline"]["money"]["recovered_paise"]
+                - arms[a]["money"]["recovered_paise"]) / 100)
+        for a in arms if a != "baseline"
+    }
 
     found = set(re.findall(r"₹([\d,]{5,})", text))
     unaccounted = {f for f in found if f not in allowed}

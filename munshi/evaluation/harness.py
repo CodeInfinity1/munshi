@@ -149,13 +149,18 @@ def render(payload: dict) -> str:
         "",
         "## The claim this rests on",
         "",
-        f"- {b['structurally_unretryable_cases']} of {b['cases_with_failure_code']} "
-        f"cases carrying a Razorpay failure code "
-        f"(**{b['structurally_unretryable_share']}%**, "
-        f"**{b['share_of_failed_value']}%** of failed value = "
-        f"{rs(b['structurally_unretryable_paise'])}) are *structurally unretryable*: "
-        "the instrument, the mandate or the request itself cannot authorise the "
-        "amount, whatever the ladder does.",
+        f"- **{b['expected_share_by_weight']['blended']}% of coded payment failures are "
+        "structurally unretryable** by the generator's own reason weights -- the "
+        "instrument, the mandate or the request itself cannot authorise the amount, "
+        "whatever the ladder does. That is the population parameter, not one draw.",
+        f"- In *this* batch the draw came out at "
+        f"{b['structurally_unretryable_cases']}/{b['cases_with_failure_code']} cases "
+        f"({b['structurally_unretryable_share']}%), worth "
+        f"{rs(b['structurally_unretryable_paise'])} "
+        f"({b['share_of_failed_value']}% of failed value). The value share moves "
+        "between seeds because it depends on which cases drew large amounts; the "
+        "case share does not move much, and the ladder spends retries on all of it "
+        f"either way -- {arms['baseline']['quality']['wasted_retries']} of them here.",
         "",
         "## Headline",
         "",

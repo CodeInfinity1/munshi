@@ -10,8 +10,10 @@ sequenceDiagram
     autonumber
     participant RZP as Razorpay
     participant IN as Ingest
+    participant TR as Triage
     participant EN as Enrich
-    participant RE as Reason
+    participant AG as Agent
+    participant TL as Tools
     participant PO as Policy
     participant EX as Execute
     participant LG as Ledger
@@ -20,10 +22,15 @@ sequenceDiagram
     RZP->>IN: payment.failed (webhook, signed)
     IN->>IN: verify HMAC over raw bytes
     IN->>IN: dedupe on provider event id
-    IN->>EN: risk case opened
-    EN->>EN: taxonomy · downtime · history · compliance · budgets
-    EN->>RE: context pack (no latent truth)
-    RE->>PO: {root cause, action, delay, channel, message}
+    IN->>TR: risk case opened
+    TR->>TR: amount x P(recover) x urgency, ranked
+    TR->>EN: highest expected value first
+    EN->>AG: compact brief (no latent truth)
+    loop bounded, max 6 turns
+        AG->>TL: read a tool, or dry-run a candidate action
+        TL-->>AG: result (no tool moves money)
+    end
+    AG->>PO: submit_decision -> validated proposal
     PO->>PO: evaluate ~20 rules, record every verdict
     alt allowed
         PO->>EX: execute with idempotency key
@@ -49,6 +56,12 @@ publishes `error_reason` on every failure. Whether a retry on that instrument ca
 *ever* succeed follows from the code, so it is resolved by lookup in
 `taxonomy.py` before any model runs. `card_expired` is not retryable however
 confident anything is about it.
+
+**1b. No tool the agent can call moves money.** The model has eight tools: six
+reads, one calculation, and one dry run. The terminal tool produces a *proposal*.
+There is no `retry_payment` tool and no `send_message` tool, so a fully
+compromised model has nothing to redirect. See
+[agent-design.md](agent-design.md).
 
 **2. The policy engine is deterministic, total, and unreachable from the model.**
 It takes a proposal and returns `allow` / `require_approval` / `deny`. It has no
@@ -83,6 +96,20 @@ actually happened during development:
   not sent yet", so the precedence fix above turned 18 live cases into
   write-offs. The rule's escalation is now conditional on the amount.
 
+## Prioritisation
+
+An agent with finite capacity has to choose what to work on. Processing cases in
+whatever order the database returns is not a decision, and it is the wrong one
+whenever the work budget binds: on a book where a quarter of coded failures can
+never be recovered, sorting by amount puts uncollectable money at the top.
+
+`triage.py` scores each due case as `amount x P(recover) x urgency`, where
+P(recover) is built from the taxonomy's own recoverability prior, the payer's
+track record, whether the rail is currently down, retries already spent, and age
+decay. Every factor is returned alongside the product — an unexplained priority
+is a priority nobody will trust — and the whole score is exposed to the agent as a
+tool and rendered in the UI.
+
 ## The virtual clock
 
 Recovery plays out over days. An insufficient-funds retry that fires 36 hours
@@ -113,22 +140,31 @@ are no floats in the money path.**
 | `approvals` | The merchant queue |
 | `downtimes` | Razorpay Payment Downtime records, kept current by `payment.downtime.*` |
 | `ledger` | Money movements. **The only place recovery is counted.** |
+| — | `cases.settled_externally_at` records money the customer paid through another channel mid-recovery. Real, and deliberately absent from the ledger. |
 | `audit` | Append-only, sha256-chained |
 | `runs` | Which reasoner and adapter produced which batch |
 
 ### Case state machine
 
 ```
-                    ┌──────────────────────────── recovered   (ledger row exists)
+                    ┌─────────────────────── recovered           (ledger row exists)
                     │
-open ──► scheduled ─┼──────────────────────────── stopped     (a stopping rule fired)
+                    ├─────────────────────── settled_externally  (customer paid elsewhere;
+open ──► scheduled ─┤                                             NO ledger row, never claimed)
    ▲          │     │
-   │          │     ├──────────────────────────── escalated   (handed to a human)
+   │          │     ├─────────────────────── stopped             (a stopping rule fired)
    └──────────┘     │
-   (cooldown,       └──────────────────────────── suppressed  (must not be contacted)
-    outage hold,
-    contact window)  awaiting_approval ──► (merchant decides) ──► recovered | stopped
+   (cooldown,       ├─────────────────────── escalated           (handed to a human)
+    outage hold,    │
+    contact window) └─────────────────────── suppressed          (must not be contacted)
+
+                     awaiting_approval ──► (merchant decides) ──► recovered | stopped
 ```
+
+`CaseState.terminal_placeholders()` generates the `?,?,?…` for every `IN` clause
+over terminal states. Hard-coded placeholder counts broke four queries at runtime
+the moment a fifth terminal state was added, which is precisely the bug that
+class of literal exists to cause.
 
 Terminal states are terminal: a proposal on a terminal case is denied by
 `case_not_terminal`. At the end of the window a sweep gives every remaining case
@@ -155,6 +191,19 @@ that moves money, only the second one is worth anything.
 The `detail` payload holds structured decision records: inputs, rule verdicts,
 outcomes, and the short rationale the model was asked to emit as part of its
 structured output. It deliberately does not store raw chain-of-thought.
+
+## Concurrency
+
+The decision pass fans out across threads, because the model call is the entire
+latency. Two things follow:
+
+- **Tool dispatch is serialised on a shared lock.** Every read tool touches the
+  same SQLite connection, and `check_same_thread=False` permits use from another
+  thread but not *concurrent* use — it surfaces as `bad parameter or other API
+  misuse` only under load. Reads are microseconds, so the lock costs nothing
+  measurable.
+- **Nothing that writes runs in a worker.** Enrichment and reasoning fan out;
+  every state change is applied on the serialised path afterwards.
 
 ## Adapters
 

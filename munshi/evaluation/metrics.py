@@ -233,11 +233,32 @@ def _pct(num, den) -> float:
     return round(100.0 * num / den, 2) if den else 0.0
 
 
-def unretryable_share(conn) -> dict:
-    """How much of the batch is structurally unretryable, straight off the taxonomy.
+def expected_unretryable_share() -> dict:
+    """The share of failures that are structurally unretryable *in the population*,
+    computed from the generator's reason weights rather than from one draw.
 
-    This is the headline claim the product rests on, computed from the data rather
-    than asserted: a fixed retry ladder spends attempts on all of it.
+    A sampled share is one number from a distribution; quoting only that invites
+    the fair objection that a different seed would say something else. This is the
+    parameter the sample is drawn from, and it does not move.
+    """
+    from ..seed.generate import REASONS_ONE_TIME, REASONS_SUBSCRIPTION
+
+    out = {}
+    for label, table in (("one_time", REASONS_ONE_TIME),
+                         ("subscription", REASONS_SUBSCRIPTION)):
+        total = sum(w for _, w in table)
+        zero = sum(w for r, w in table
+                   if lookup(r).family in ZERO_YIELD_RETRY_FAMILIES)
+        out[label] = _pct(zero, total)
+    # The batch is 38% one-time payment failures and 30% subscription failures.
+    out["blended"] = round((out["one_time"] * 38 + out["subscription"] * 30) / 68, 2)
+    return out
+
+
+def unretryable_share(conn) -> dict:
+    """How much of *this batch* is structurally unretryable, straight off the
+    taxonomy. Reported next to the population parameter above, because one draw
+    is a weaker claim than the distribution it came from.
     """
     total = zero = 0
     zero_paise = total_paise = 0
@@ -251,4 +272,5 @@ def unretryable_share(conn) -> dict:
     return {"cases_with_failure_code": total, "structurally_unretryable_cases": zero,
             "structurally_unretryable_share": _pct(zero, total),
             "structurally_unretryable_paise": zero_paise,
-            "share_of_failed_value": _pct(zero_paise, total_paise)}
+            "share_of_failed_value": _pct(zero_paise, total_paise),
+            "expected_share_by_weight": expected_unretryable_share()}
