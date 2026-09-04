@@ -36,7 +36,7 @@ from .policy import POLICY
 from .reason import build_reasoner
 from .seed.generate import BATCH_START
 from .seed.load import seed_database
-from .taxonomy import families, source_semantics
+from .taxonomy import families, lookup, source_semantics
 
 app = FastAPI(title="Munshi", version="0.1.0",
               description="Bounded revenue-recovery agent for Razorpay merchants")
@@ -408,24 +408,31 @@ def escalations(c=Depends(conn)):
     An escalation with no owner and no next action is a dead end dressed up as a
     handoff, so every reason here carries both.
     """
-    owners = {
-        "risk_decline_requires_human_review": (
+    # Route on the *cause*, not on the action that closed the case. Several
+    # different failures all exit through escalate_to_merchant_ops, and a risk
+    # decline routed to merchant ops is a handoff to the wrong desk.
+    by_family = {
+        "risk_flagged": (
             "Risk / fraud review",
             "Review the decline manually. An automated system must not retry or chase "
             "its way past a risk decision."),
-        "emandate_requires_customer_afa": (
-            "Customer", "Send a mandate re-authorisation link; only the customer can "
-                        "complete fresh additional-factor authentication above the "
-                        "AFA-free ceiling."),
-        "not_a_customer_resolvable_failure": (
-            "Merchant ops", "Fix the account or method configuration. The customer "
-                            "cannot enable a disabled payment method."),
-        "escalate_to_merchant_ops_completed": (
-            "Merchant ops", "Enable the payment method or bank, then Munshi will "
-                            "re-present automatically."),
-        "open_engineering_ticket_completed": (
-            "Engineering", "The integration is sending a malformed request. Retrying "
-                           "it cannot work; the caller has to change."),
+        "merchant_config": (
+            "Merchant ops",
+            "Enable the payment method, bank or network. Once it is fixed Munshi will "
+            "re-present automatically; the customer cannot resolve this."),
+        "integration_bug": (
+            "Engineering",
+            "The integration is sending a malformed request. Retrying it cannot work; "
+            "the caller has to change."),
+        "mandate_broken": (
+            "Customer",
+            "Only the customer can complete fresh additional-factor authentication. "
+            "Send a mandate re-authorisation link."),
+    }
+    by_reason = {
+        "emandate_requires_customer_afa": by_family["mandate_broken"],
+        "not_a_customer_resolvable_failure": by_family["merchant_config"],
+        "risk_decline_requires_human_review": by_family["risk_flagged"],
         "adapter_cannot_execute": (
             "Platform", "The configured adapter cannot perform this action. Nothing "
                         "was executed and nothing was simulated."),
@@ -435,8 +442,12 @@ def escalations(c=Depends(conn)):
                       " WHERE cs.state = 'escalated' ORDER BY cs.amount_paise DESC")
     groups: dict[str, dict] = {}
     for r in rows:
-        reason = r["stop_reason"] or "unknown"
-        owner, action = owners.get(reason, ("Merchant ops", "Review this case manually."))
+        stop = r["stop_reason"] or "unknown"
+        family = lookup(r["error_reason"]).family
+        owner, action = (by_reason.get(stop)
+                         or by_family.get(family)
+                         or ("Merchant ops", "Review this case manually."))
+        reason = f"{family} · {stop}"
         g = groups.setdefault(reason, {"reason": reason, "owner": owner,
                                        "next_action": action, "cases": [],
                                        "value_paise": 0})

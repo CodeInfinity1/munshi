@@ -170,3 +170,20 @@ def test_policy_publishes_the_agent_tool_surface(client):
     assert "submit_decision" in names
     assert not (names & {"retry_payment", "create_payment_link", "send_message"})
     assert all(t["moves_money"] is False for t in tools)
+
+
+def test_escalations_route_on_the_cause_not_the_closing_action(client):
+    """Several different failures exit through escalate_to_merchant_ops. A risk
+    decline routed to merchant ops is a handoff to the wrong desk."""
+    from munshi import db
+
+    c = db.connect()
+    c.execute("UPDATE cases SET state='escalated',"
+              " stop_reason='escalate_to_merchant_ops_completed',"
+              " error_reason='payment_risk_check_failed'"
+              " WHERE id = (SELECT id FROM cases LIMIT 1)")
+    c.close()
+    groups = client.get("/api/escalations").json()["groups"]
+    risk = [g for g in groups if "risk_flagged" in g["reason"]]
+    assert risk, "a risk decline must not be grouped as a merchant-ops handoff"
+    assert risk[0]["owner"] == "Risk / fraud review"
